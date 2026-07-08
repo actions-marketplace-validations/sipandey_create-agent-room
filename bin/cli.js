@@ -61,6 +61,12 @@ function parseArgs(argv) {
       } else {
         throw new Error('Error: --skill-packs option requires a comma-separated list of skill packs.');
       }
+    } else if (a === '--org') {
+      if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
+        args.org = argv[++i];
+      } else {
+        throw new Error('Error: --org option requires an organization name.');
+      }
     } else if (a.startsWith('--tools=')) {
       args.tools = a.slice('--tools='.length);
     } else if (a.startsWith('--name=')) {
@@ -75,6 +81,8 @@ function parseArgs(argv) {
       args.branch = a.slice('--branch='.length);
     } else if (a.startsWith('--skill-packs=')) {
       args['skill-packs'] = a.slice('--skill-packs='.length);
+    } else if (a.startsWith('--org=')) {
+      args.org = a.slice('--org='.length);
     } else if (a === '--help' || a === '-h' || a === 'help') {
       args.help = true;
     } else if (a.startsWith('-')) {
@@ -102,6 +110,7 @@ Options:
   --language <name>         Language used in project (default: javascript)
   --branch <name>           Default branch name (default: main)
   --skill-packs <list>      Comma-separated optional skill packs: testing,security,release (default: none)
+  --org <name>              Organization layer name for template inheritance (default: none)
   --git                     Run "git init" and create an initial commit in target-dir
   --force                   Overwrite existing files instead of skipping them
   --check, -c               Check if mirrored files are out of sync without writing changes

@@ -184,3 +184,49 @@ test('runInit: rolls back created files on scaffolding failure', async (t) => {
   assert.strictEqual(fs.existsSync(path.join(tmpDir, 'AGENTS.md')), false, 'AGENTS.md should have been deleted during rollback');
   assert.strictEqual(fs.existsSync(path.join(tmpDir, '.agent-room', 'principles.md')), false, '.agent-room/principles.md should have been deleted during rollback');
 });
+
+test('runInit: template inheritance layers merge correctly', async (t) => {
+  const tmpDir = path.join(__dirname, 'tmp-inheritance-' + Date.now());
+  const tmplDir = path.join(__dirname, 'tmp-templates-' + Date.now());
+
+  t.after(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    fs.rmSync(tmplDir, { recursive: true, force: true });
+  });
+
+  // Setup structured template hierarchy
+  fs.mkdirSync(path.join(tmplDir, 'base', '.agent-room'), { recursive: true });
+  fs.mkdirSync(path.join(tmplDir, 'stacks', 'python', '.agent-room'), { recursive: true });
+  fs.mkdirSync(path.join(tmplDir, 'org', 'acme', '.agent-room', 'skills'), { recursive: true });
+
+  fs.writeFileSync(path.join(tmplDir, 'base', 'AGENTS.md.tmpl'), 'Base Agent {{PROJECT_NAME}}');
+  fs.writeFileSync(path.join(tmplDir, 'base', '.agent-room', 'principles.md'), 'Base Principle');
+  fs.writeFileSync(path.join(tmplDir, 'stacks', 'python', '.agent-room', 'principles.md'), 'Python Principle');
+  fs.writeFileSync(path.join(tmplDir, 'org', 'acme', '.agent-room', 'principles.md'), 'Acme Principle');
+  fs.writeFileSync(path.join(tmplDir, 'org', 'acme', '.agent-room', 'skills', 'acme-skill.md'), 'Acme Skill');
+
+  fs.mkdirSync(tmpDir, { recursive: true });
+
+  await runInit(tmpDir, {
+    yes: true,
+    tools: 'none',
+    name: 'InheritTest',
+    language: 'python',
+    org: 'acme',
+    'template-source': tmplDir,
+    force: true
+  });
+
+  // Verify Base layer file was copied
+  assert.ok(fs.existsSync(path.join(tmpDir, 'AGENTS.md')), 'AGENTS.md should exist');
+  assert.strictEqual(fs.readFileSync(path.join(tmpDir, 'AGENTS.md'), 'utf8'), 'Base Agent InheritTest');
+
+  // Verify Principles file was overridden by Acme org (highest priority)
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'principles.md')), 'principles.md should exist');
+  assert.strictEqual(fs.readFileSync(path.join(tmpDir, '.agent-room', 'principles.md'), 'utf8'), 'Acme Principle');
+
+  // Verify Acme specific skill was copied
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'acme-skill.md')), 'acme-skill.md should exist');
+  assert.strictEqual(fs.readFileSync(path.join(tmpDir, '.agent-room', 'skills', 'acme-skill.md'), 'utf8'), 'Acme Skill');
+});
+
