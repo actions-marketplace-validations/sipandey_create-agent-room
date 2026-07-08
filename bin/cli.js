@@ -7,6 +7,7 @@ const { runSync } = require('../lib/sync');
 const { runMetrics } = require('../lib/metrics');
 const { runValidate } = require('../lib/validate');
 const { runPrDesc } = require('../lib/pr');
+const { runLintSessions } = require('../lib/lint-sessions');
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -108,6 +109,7 @@ Usage:
   create-agent-room sync [target-dir] [options]
   create-agent-room metrics [target-dir]
   create-agent-room validate [target-dir]
+  create-agent-room lint-sessions [target-dir]
   create-agent-room pr-desc [target-dir] [options]
 
 Options:
@@ -132,6 +134,7 @@ Examples:
   create-agent-room sync . --check
   create-agent-room metrics .
   create-agent-room validate .
+  create-agent-room lint-sessions .
   create-agent-room pr-desc . --write
 `);
 }
@@ -156,6 +159,8 @@ async function main() {
     runMetrics(target, args);
   } else if (command === 'validate') {
     runValidate(target, args);
+  } else if (command === 'lint-sessions') {
+    runLintSessions(target);
   } else if (command === 'pr-desc') {
     runPrDesc(target, args);
   } else {
