@@ -2,19 +2,64 @@
 
 Scaffold an LLM-agent-friendly project structure and governance framework into any new or existing project.
 
-`create-agent-room` provides a generic `AGENTS.md` entry point, a principles playbook, a workflow classifier, anti-patterns/decisions logs, and custom multi-agent coordination protocols. It also supports optional thin adapters for Claude Code, Cursor, Windsurf, Cline, and Git to mechanically enforce quality and governance.
+`create-agent-room` is a **best-practices scaffolder and analytics engine** for LLM agents. It provides a generic `AGENTS.md` entry point, a principles playbook, a workflow classifier, anti-patterns/decisions logs, and custom multi-agent coordination protocols. It also supports optional thin adapters for Claude Code, Cursor, Windsurf, Cline, Git, and Codex to provide guidance and **optionally enforce** quality and governance.
+
+> **Note:** This tool excels at generating initial project structure and post-hoc analytics. Some features are **prescriptive guidance** (documentation) while others are **actively enforced** (e.g., guardrails pre-commit hook, session log validation). See [Feature Categories](#feature-categories) and [CAPABILITIES.md](CAPABILITIES.md) for details on what's enforced vs. guidance.
 
 ---
 
 ## Features
 
-- **Multi-Agent Coordination**: Scaffolds guidelines for handoffs, scope boundaries, and structured session logs.
-- **Agent Guardrails**: Defines protected paths, require-approval rules, and forbidden actions via `guardrails.json`.
-- **Inheritance & Composition**: Composes templates sequentially from base structures, stack-specific files (e.g. Python, React), org-specific conventions (`--org <name>`), and project overrides.
-- **Built-in & External Skill Packs**: Standard templates (testing, security, database-migrations, api-design, code-review, performance, observability, docs) or remote skill packs directly from Git repositories and local paths.
-- **CI Room Validation**: Lint skill YAML frontmatter headers and verify guardrail schemas in your CI/CD pipelines.
-- **Observability Metrics Dashboard**: Parse and compile analytics (success rates, classifications, file modifications volumes) from agent session logs.
+- **Multi-Agent Coordination**: Scaffolds templates for handoffs, scope boundaries, and structured session logs. *[Guidance only; requires human discipline to follow protocols]*
+- **Agent Guardrails**: Defines protected paths, require-approval rules, and forbidden actions via `guardrails.json`. *[Actively enforced via pre-commit hook when Git adapter selected]*
+- **Session Log Format Enforcement**: Validates session logs against required structure via `lint-sessions` command. *[Actively enforced; fails CI if logs malformed]*
+- **Inheritance & Composition**: Composes templates sequentially from base structures, stack-specific files (e.g. Python, React), org-specific conventions (`--org <name>`), and project overrides. *[Framework provided; stack templates must be created or inherited]*
+- **Built-in & External Skill Packs**: Standard templates (testing, security, database-migrations, api-design, code-review, performance, observability, docs) or remote skill packs directly from Git repositories and local paths. *[Documentation and guidance; not executable rules]*
+- **CI Room Validation**: Lint skill YAML frontmatter headers, verify guardrail schemas, and validate session logs in your CI/CD pipelines.
+- **Observability Metrics Dashboard**: Parse and compile analytics (success rates, classifications, file modifications volumes) from agent session logs. *[Post-hoc aggregation; not real-time monitoring]*
 - **PR Description Generator**: Automatically extract Goal, Touched Files, Actions, and Handoff notes from the latest session log to generate standard Pull Request descriptions.
+
+---
+
+## Feature Categories
+
+### 🟢 Actively Enforced Features
+These features actively constrain behavior and will fail/block operations if violated:
+
+- **Agent Guardrails** — Pre-commit hook blocks commits to protected paths or with forbidden patterns (optional; requires `--tools git`)
+- **Session Log Validation** — `lint-sessions` command validates all session logs against schema; fails CI with exit code 1 if malformed
+- **Skill Frontmatter Validation** — `validate` command lints skill YAML headers
+
+### 🟡 Prescriptive Guidance (Requires Human Discipline)
+These features provide templates and protocols that agents must choose to follow:
+
+- **Workflow Classifier** — Guides agents to tag work as Bug / Enhancement / Feature / Product (not automatically enforced)
+- **Multi-Agent Coordination Protocols** — Handoff, scope, session log format templates exist but agents must follow them manually
+- **Anti-patterns & Decisions Logs** — Require manual updates; no automated enforcement
+- **Principles Playbook** — 12 guidelines for reliable LLM output; agents must apply them
+
+### 🔵 Aspirational/Framework Features
+These provide a framework that requires external setup:
+
+- **Stack-Specific Templates** — Inheritance system supports Python, TypeScript, React stacks, but these must be created or provided via `--org` or `--template-source`
+- **Observability Metrics** — Post-hoc aggregation of completed sessions; not real-time monitoring or alerting
+- **Tool Adapters** — Currently supports Claude, Cursor, Windsurf, Cline, Codex, and Git; sync is Claude-only (other tools manually update)
+
+---
+
+## What Requires Human Discipline?
+
+Some features depend on agents choosing to follow documented guidance. **There is no automatic enforcement**:
+
+- **Workflow Classification** — Agents must tag work as Bug / Enhancement / Feature / Product when creating session logs
+- **Following Coordination Protocols** — Agents must read and follow handoff, scope, and session log format guidelines
+- **Updating Decisions & Anti-patterns Logs** — Agents must manually append learnings; the tool doesn't auto-populate these
+- **Applying Principles** — Agents must read the principles playbook and apply them; the tool provides no real-time guidance
+- **Respecting Tool Rules** — Tool adapters (Claude, Cursor, etc.) provide guidance files, but tools decide whether/how to apply them
+
+These features work **only if your team commits to following them**. The tool creates the structure and validation hooks; discipline is external.
+
+For comprehensive details on what's enforced, guidance, and aspirational, see [CAPABILITIES.md](CAPABILITIES.md).
 
 ---
 
@@ -132,6 +177,20 @@ Parses the latest session log inside `.agent-room/sessions/` (based on timestamp
 
 ![Pull Request Description](docs/images/media__1783509718632.png)
 
+### 6. `lint-sessions [target-dir]`
+
+Validates all session logs in `.agent-room/sessions/` against the required schema (Date, Agent, Classification, Goal, Files touched, Actions taken, Tests run, Decisions, Outcome).
+
+- Returns exit code `1` if validation fails (suitable for CI gating)
+- Reports errors (missing required sections) and warnings (invalid classifications, missing files)
+
+**Usage in CI:**
+
+```yaml
+- name: Validate Session Logs
+  run: npx create-agent-room lint-sessions .
+```
+
 ---
 
 ## Options
@@ -158,11 +217,13 @@ Parses the latest session log inside `.agent-room/sessions/` (based on timestamp
 
 `create-agent-room` supports a powerful hierarchical layering mechanism. The overlay resolver will find and inherit files, merging folders in order from lowest-priority to highest-priority:
 
-1. **Packaged Default Templates** (built-in base rules)
-2. **Packaged Stack-specific Templates** (e.g. `templates/stacks/python/`)
-3. **Global Templates** (`~/.agent-room-templates/base/`)
-4. **Global Stack-specific Templates** (`~/.agent-room-templates/stacks/python/`)
-5. **Global Org-specific Templates** (`~/.agent-room-templates/org/<org-name>/`)
-6. **Local Templates** (`.agent-room-templates/` or `--template-source`)
+1. **Packaged Default Templates** (built-in base rules) ✅ Provided
+2. **Packaged Stack-specific Templates** (e.g. `templates/stacks/python/`) ✅ Provided
+3. **Global Templates** (`~/.agent-room-templates/base/`) 🔵 User-provided (optional)
+4. **Global Stack-specific Templates** (`~/.agent-room-templates/stacks/python/`) 🔵 User-provided (optional)
+5. **Global Org-specific Templates** (`~/.agent-room-templates/org/<org-name>/`) 🔵 User-provided via `--org` (optional)
+6. **Local Templates** (`.agent-room-templates/` or `--template-source`) 🔵 User-provided (optional)
 
 During this overlay process, files in higher-priority folders will overwrite conflicts from lower layers, enabling modular organization-wide guidelines with project-level overrides.
+
+**Note:** Layers 3-6 are **aspirational** — the framework supports them, but you must create or provide these templates yourself. Layers 1-2 ship with the package. To use stack inheritance effectively, create your org's stack templates in layer 5 or provide them at project init time.
