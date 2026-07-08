@@ -230,3 +230,39 @@ test('runInit: template inheritance layers merge correctly', async (t) => {
   assert.strictEqual(fs.readFileSync(path.join(tmpDir, '.agent-room', 'skills', 'acme-skill.md'), 'utf8'), 'Acme Skill');
 });
 
+test('runInit: resolves local external skill pack correctly', async (t) => {
+  const tmpDir = path.join(__dirname, 'tmp-ext-init-' + Date.now());
+  const extDir = path.join(__dirname, 'tmp-ext-skills-' + Date.now());
+
+  t.after(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+    fs.rmSync(extDir, { recursive: true, force: true });
+  });
+
+  // Setup external skill packs dir
+  fs.mkdirSync(extDir, { recursive: true });
+  fs.writeFileSync(path.join(extDir, 'my-custom-rule.md'), 'Custom Rule {{PROJECT_NAME}}');
+  fs.writeFileSync(path.join(extDir, 'README.md'), 'Should be skipped');
+
+  fs.mkdirSync(tmpDir, { recursive: true });
+
+  await runInit(tmpDir, {
+    yes: true,
+    tools: 'none',
+    name: 'ExtTest',
+    'skill-packs': `testing,${extDir}`,
+    force: true
+  });
+
+  // Verify built-in skill pack was copied
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'integration-testing.md')), 'integration-testing skill should exist');
+
+  // Verify local external skill was copied and rendered with vars
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'my-custom-rule.md')), 'my-custom-rule.md should exist');
+  assert.strictEqual(fs.readFileSync(path.join(tmpDir, '.agent-room', 'skills', 'my-custom-rule.md'), 'utf8'), 'Custom Rule ExtTest');
+
+  // Verify README.md was skipped
+  assert.ok(!fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'README.md')), 'README.md should be skipped');
+});
+
+
