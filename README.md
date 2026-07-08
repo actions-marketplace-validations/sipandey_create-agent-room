@@ -1,6 +1,6 @@
 # create-agent-room
 
-Scaffold an LLM-agent-friendly project structure and governance framework into any new or existing project. 
+Scaffold an LLM-agent-friendly project structure and governance framework into any new or existing project.
 
 `create-agent-room` provides a generic `AGENTS.md` entry point, a principles playbook, a workflow classifier, anti-patterns/decisions logs, and custom multi-agent coordination protocols. It also supports optional thin adapters for Claude Code, Cursor, Windsurf, Cline, and Git to mechanically enforce quality and governance.
 
@@ -39,6 +39,10 @@ node bin/cli.js metrics .
 # Generate a Pull Request description from the latest session log and save it:
 node bin/cli.js pr-desc . --write
 ```
+
+**Example: Init Command**
+
+![Create Agent Room Init Output](docs/images/media__1783509718671.png)
 
 Once published to npm, the same commands work via `npx`:
 
@@ -84,45 +88,69 @@ docs/plans/                        Where design docs and task plans get saved
 ## Subcommands
 
 ### 1. `init [target-dir]`
+
 Scaffold the agent workspace. If files already exist in the target, they are skipped by default to protect manual edits unless `--force` is specified.
 
 ### 2. `sync [target-dir]`
+
 Synchronize custom rules from `.agent-room/skills/` directly to `.claude/skills/` mirrors.
-* Run with `--check` to verify if mirrored rule files are out of date without rewriting them.
-* Sync will automatically skip overwriting files if they have uncommitted manual edits, unless `--force` is used.
+
+- Run with `--check` to verify if mirrored rule files are out of date without rewriting them.
+- Sync will automatically skip overwriting files if they have uncommitted manual edits, unless `--force` is used.
 
 ### 3. `validate [target-dir]`
+
 Performs structural validation and linting on the room. Returns exit code `1` on error:
-* Asserts presence of all mandatory files and folders (e.g. `AGENTS.md`, `guardrails.md`).
-* Lints skill files under `.agent-room/skills/*.md` to ensure they contain Jekyll-style frontmatter headers (`---`) with valid `name` and `description` attributes.
-* Parses and validates `.agent-room/guardrails.json` schema.
+
+- Asserts presence of all mandatory files and folders (e.g. `AGENTS.md`, `guardrails.md`).
+- Lints skill files under `.agent-room/skills/*.md` to ensure they contain Jekyll-style frontmatter headers (`---`) with valid `name` and `description` attributes.
+- Parses and validates `.agent-room/guardrails.json` schema.
+
+**Example: Validation Passed**
+
+![Validation Passed Output](docs/images/media__1783509718049.png)
+
+**Example: Validation Failed**
+
+![Validation Failed Output](docs/images/media__1783509718346.png)
 
 ### 4. `metrics [target-dir]`
+
 Aggregates all JSON and Markdown session logs inside `.agent-room/sessions/` and renders a clean CLI dashboard detailing outcome success rates, task type distributions, and overall file edit volumes.
 
+**Example: Metrics Dashboard**
+
+![Agent Session Dashboard](docs/images/media__1783509718617.png)
+
 ### 5. `pr-desc [target-dir]`
+
 Parses the latest session log inside `.agent-room/sessions/` (based on timestamp filename order) and formats it into a Pull Request description template.
-* Use `--write` (or `-w`) to output and save it directly to `.agent-room/pr-description.md`.
+
+- Use `--write` (or `-w`) to output and save it directly to `.agent-room/pr-description.md`.
+
+**Example: PR Description Output**
+
+![Pull Request Description](docs/images/media__1783509718632.png)
 
 ---
 
 ## Options
 
-| Flag | Effect |
-| --- | --- |
-| `--name <name>` | Project name substituted into templates (default: target dir name) |
-| `--tools <list>` | Comma-separated: `claude,cursor,windsurf,cline,codex,git,none` (default: prompt) |
-| `--template-source <path>` | Custom templates folder path (default: searches local, home, package) |
-| `--package-manager <name>` | Package manager to use, e.g. npm, poetry, cargo (default: npm) |
-| `--language <name>` | Target project language, e.g. typescript, python, rust (default: javascript) |
-| `--branch <name>` | Default git branch (default: main) |
-| `--skill-packs <list>` | Comma-separated built-in names (`testing`, `security`, `release`, `code-review`, `api-design`, `database`, `performance`, `observability`, `documentation`), Git URLs (`git+ssh://...`), or local directory paths |
-| `--org <name>` | Organization layer directory name to look for during template inheritance overlays |
-| `--git` | Run `git init` and create an initial commit in the target directory |
-| `--force` | Overwrite existing files instead of skipping them |
-| `--write, -w` | Save generated PR description output to `.agent-room/pr-description.md` |
-| `--verbose` | Print detailed stack traces on failure |
-| `-y, --yes` | Skip all prompts, use defaults |
+| Flag                       | Effect                                                                                                                                                                                                            |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `--name <name>`            | Project name substituted into templates (default: target dir name)                                                                                                                                                |
+| `--tools <list>`           | Comma-separated: `claude,cursor,windsurf,cline,codex,git,none` (default: prompt)                                                                                                                                  |
+| `--template-source <path>` | Custom templates folder path (default: searches local, home, package)                                                                                                                                             |
+| `--package-manager <name>` | Package manager to use, e.g. npm, poetry, cargo (default: npm)                                                                                                                                                    |
+| `--language <name>`        | Target project language, e.g. typescript, python, rust (default: javascript)                                                                                                                                      |
+| `--branch <name>`          | Default git branch (default: main)                                                                                                                                                                                |
+| `--skill-packs <list>`     | Comma-separated built-in names (`testing`, `security`, `release`, `code-review`, `api-design`, `database`, `performance`, `observability`, `documentation`), Git URLs (`git+ssh://...`), or local directory paths |
+| `--org <name>`             | Organization layer directory name to look for during template inheritance overlays                                                                                                                                |
+| `--git`                    | Run `git init` and create an initial commit in the target directory                                                                                                                                               |
+| `--force`                  | Overwrite existing files instead of skipping them                                                                                                                                                                 |
+| `--write, -w`              | Save generated PR description output to `.agent-room/pr-description.md`                                                                                                                                           |
+| `--verbose`                | Print detailed stack traces on failure                                                                                                                                                                            |
+| `-y, --yes`                | Skip all prompts, use defaults                                                                                                                                                                                    |
 
 ---
 
