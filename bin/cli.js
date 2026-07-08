@@ -5,6 +5,7 @@ const path = require('path');
 const { runInit } = require('../lib/init');
 const { runSync } = require('../lib/sync');
 const { runMetrics } = require('../lib/metrics');
+const { runValidate } = require('../lib/validate');
 
 function parseArgs(argv) {
   const args = { _: [] };
@@ -103,6 +104,7 @@ Usage:
   create-agent-room init [target-dir] [options]
   create-agent-room sync [target-dir] [options]
   create-agent-room metrics [target-dir]
+  create-agent-room validate [target-dir]
 
 Options:
   --name <name>             Project name used in templates (default: target dir name)
@@ -124,6 +126,7 @@ Examples:
   create-agent-room init . --yes --language python --package-manager pip --skill-packs testing
   create-agent-room sync . --check
   create-agent-room metrics .
+  create-agent-room validate .
 `);
 }
 
@@ -145,6 +148,8 @@ async function main() {
     runSync(target, args);
   } else if (command === 'metrics') {
     runMetrics(target, args);
+  } else if (command === 'validate') {
+    runValidate(target, args);
   } else {
     console.error(`Unknown command: ${command}`);
     printHelp();

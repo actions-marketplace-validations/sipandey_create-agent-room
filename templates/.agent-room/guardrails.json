@@ -1,59 +1,23 @@
 {
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "title": "Agent Guardrails Configuration",
-  "description": "Machine-readable boundaries and constraints for AI agents.",
-  "type": "object",
-  "properties": {
-    "protectedPaths": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "Glob patterns of files/directories that agents must not modify without human approval."
-    },
-    "requireApprovalFor": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "Types of changes that require human review, e.g., 'database migrations', 'major dependency bumps'."
-    },
-    "scopeGuidance": {
-      "type": "object",
-      "properties": {
-        "maxFilesPerChange": {
-          "type": "integer",
-          "description": "Warning threshold for number of files touched in a single change."
-        },
-        "maxLinesPerChange": {
-          "type": "integer",
-          "description": "Warning threshold for number of lines touched in a single change."
-        }
-      }
-    },
-    "forbiddenActions": {
-      "type": "array",
-      "items": { "type": "string" },
-      "description": "Actions agents must never take, e.g., 'deploy to production'."
-    }
+  "protectedPaths": [
+    "infrastructure/**",
+    "**/*.tfstate",
+    ".github/workflows/**"
+  ],
+  "requireApprovalFor": [
+    "database migrations",
+    "dependency major version bumps",
+    "changes to CI/CD pipeline",
+    "changes to authentication or authorization logic"
+  ],
+  "scopeGuidance": {
+    "maxFilesPerChange": 20,
+    "maxLinesPerChange": 500
   },
-  "default": {
-    "protectedPaths": [
-      "infrastructure/**",
-      "**/*.tfstate",
-      ".github/workflows/**"
-    ],
-    "requireApprovalFor": [
-      "database migrations",
-      "dependency major version bumps",
-      "changes to CI/CD pipeline",
-      "changes to authentication or authorization logic"
-    ],
-    "scopeGuidance": {
-      "maxFilesPerChange": 20,
-      "maxLinesPerChange": 500
-    },
-    "forbiddenActions": [
-      "deploy to production",
-      "delete database tables in production",
-      "modify authentication middleware without security review",
-      "commit secrets, API keys, or credentials"
-    ]
-  }
+  "forbiddenActions": [
+    "deploy to production",
+    "delete database tables in production",
+    "modify authentication middleware without security review",
+    "commit secrets, API keys, or credentials"
+  ]
 }
