@@ -54,6 +54,8 @@ test('runInit: scaffolds windsurf and cline adapters', async (t) => {
   });
 
   assert.ok(fs.existsSync(path.join(tmpDir, 'AGENTS.md')), 'AGENTS.md should exist');
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'guardrails.md')), 'guardrails.md should exist');
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'guardrails.json')), 'guardrails.json should exist');
   assert.ok(fs.existsSync(path.join(tmpDir, '.windsurfrules')), '.windsurfrules should exist');
   assert.ok(fs.existsSync(path.join(tmpDir, '.clinerules')), '.clinerules should exist');
 
@@ -102,7 +104,7 @@ test('runInit: scaffolds with custom parameters and optional skill packs', async
     language: 'python',
     'package-manager': 'pipenv',
     branch: 'develop',
-    'skill-packs': 'testing,security',
+    'skill-packs': 'testing,security,code-review,api-design,database,performance,observability,documentation',
     force: true
   });
 
@@ -118,10 +120,16 @@ test('runInit: scaffolds with custom parameters and optional skill packs', async
   assert.strictEqual(config.language, 'python');
   assert.strictEqual(config.packageManager, 'pipenv');
   assert.strictEqual(config.defaultBranch, 'develop');
-  assert.deepStrictEqual(config.skillPacks, ['testing', 'security']);
+  assert.deepStrictEqual(config.skillPacks, ['testing', 'security', 'code-review', 'api-design', 'database', 'performance', 'observability', 'documentation']);
 
   assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'integration-testing.md')), 'integration-testing skill should exist');
   assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'security-principles.md')), 'security-principles skill should exist');
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'code-review.md')), 'code-review skill should exist');
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'api-design.md')), 'api-design skill should exist');
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'database-migrations.md')), 'database-migrations skill should exist');
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'performance-optimization.md')), 'performance-optimization skill should exist');
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'observability.md')), 'observability skill should exist');
+  assert.ok(fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'documentation.md')), 'documentation skill should exist');
   assert.ok(!fs.existsSync(path.join(tmpDir, '.agent-room', 'skills', 'release-management.md')), 'release-management skill should NOT exist');
 });
 
