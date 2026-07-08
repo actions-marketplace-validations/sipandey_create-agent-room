@@ -38,3 +38,41 @@ test('parseArgs: throws error on missing arguments', () => {
 test('parseArgs: throws error on unknown options', () => {
   assert.throws(() => parseArgs(['--unknown-flag']), /Error: Unknown option/);
 });
+
+test('parseArgs: parses custom scaffolding options', () => {
+  const result = parseArgs([
+    '--template-source', '/path/to/tmpl',
+    '--package-manager', 'pnpm',
+    '--language', 'typescript',
+    '--branch', 'main',
+    '--skill-packs', 'testing,security'
+  ]);
+  assert.strictEqual(result['template-source'], '/path/to/tmpl');
+  assert.strictEqual(result['package-manager'], 'pnpm');
+  assert.strictEqual(result.language, 'typescript');
+  assert.strictEqual(result.branch, 'main');
+  assert.strictEqual(result['skill-packs'], 'testing,security');
+});
+
+test('parseArgs: parses custom options with equals', () => {
+  const result = parseArgs([
+    '--template-source=/path/to/tmpl2',
+    '--package-manager=yarn',
+    '--language=python',
+    '--branch=master',
+    '--skill-packs=release'
+  ]);
+  assert.strictEqual(result['template-source'], '/path/to/tmpl2');
+  assert.strictEqual(result['package-manager'], 'yarn');
+  assert.strictEqual(result.language, 'python');
+  assert.strictEqual(result.branch, 'master');
+  assert.strictEqual(result['skill-packs'], 'release');
+});
+
+test('parseArgs: throws error on missing custom arguments', () => {
+  assert.throws(() => parseArgs(['--template-source']), /Error: --template-source option requires/);
+  assert.throws(() => parseArgs(['--package-manager']), /Error: --package-manager option requires/);
+  assert.throws(() => parseArgs(['--language']), /Error: --language option requires/);
+  assert.throws(() => parseArgs(['--branch']), /Error: --branch option requires/);
+  assert.throws(() => parseArgs(['--skill-packs']), /Error: --skill-packs option requires/);
+});

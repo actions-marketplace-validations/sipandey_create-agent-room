@@ -27,10 +27,50 @@ function parseArgs(argv) {
       } else {
         throw new Error('Error: --name option requires a project name.');
       }
+    } else if (a === '--template-source') {
+      if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
+        args['template-source'] = argv[++i];
+      } else {
+        throw new Error('Error: --template-source option requires a directory path.');
+      }
+    } else if (a === '--package-manager') {
+      if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
+        args['package-manager'] = argv[++i];
+      } else {
+        throw new Error('Error: --package-manager option requires a package manager name.');
+      }
+    } else if (a === '--language') {
+      if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
+        args.language = argv[++i];
+      } else {
+        throw new Error('Error: --language option requires a language name.');
+      }
+    } else if (a === '--branch') {
+      if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
+        args.branch = argv[++i];
+      } else {
+        throw new Error('Error: --branch option requires a branch name.');
+      }
+    } else if (a === '--skill-packs') {
+      if (i + 1 < argv.length && !argv[i + 1].startsWith('-')) {
+        args['skill-packs'] = argv[++i];
+      } else {
+        throw new Error('Error: --skill-packs option requires a comma-separated list of skill packs.');
+      }
     } else if (a.startsWith('--tools=')) {
       args.tools = a.slice('--tools='.length);
     } else if (a.startsWith('--name=')) {
       args.name = a.slice('--name='.length);
+    } else if (a.startsWith('--template-source=')) {
+      args['template-source'] = a.slice('--template-source='.length);
+    } else if (a.startsWith('--package-manager=')) {
+      args['package-manager'] = a.slice('--package-manager='.length);
+    } else if (a.startsWith('--language=')) {
+      args.language = a.slice('--language='.length);
+    } else if (a.startsWith('--branch=')) {
+      args.branch = a.slice('--branch='.length);
+    } else if (a.startsWith('--skill-packs=')) {
+      args['skill-packs'] = a.slice('--skill-packs='.length);
     } else if (a === '--help' || a === '-h' || a === 'help') {
       args.help = true;
     } else if (a.startsWith('-')) {
@@ -51,15 +91,20 @@ Usage:
   create-agent-room sync [target-dir]
 
 Options:
-  --name <name>      Project name used in templates (default: target dir name)
-  --tools <list>     Comma-separated: claude,cursor,codex,none (default: prompt)
-  --git               Run "git init" and create an initial commit in target-dir
-  --force             Overwrite existing files instead of skipping them
-  -y, --yes           Don't prompt; use defaults for anything unspecified
+  --name <name>             Project name used in templates (default: target dir name)
+  --tools <list>            Comma-separated: claude,cursor,windsurf,cline,codex,git,none (default: prompt)
+  --template-source <path>  Custom template folder (default: search local/home/package)
+  --package-manager <name>  Package manager to use (default: npm)
+  --language <name>         Language used in project (default: javascript)
+  --branch <name>           Default branch name (default: main)
+  --skill-packs <list>      Comma-separated optional skill packs: testing,security,release (default: none)
+  --git                     Run "git init" and create an initial commit in target-dir
+  --force                   Overwrite existing files instead of skipping them
+  -y, --yes                 Don't prompt; use defaults for anything unspecified
 
 Examples:
-  create-agent-room init my-new-project --tools claude,cursor --git
-  create-agent-room init . --yes
+  create-agent-room init my-new-project --tools claude,cursor,git --git
+  create-agent-room init . --yes --language python --package-manager pip --skill-packs testing
   create-agent-room sync .
 `);
 }

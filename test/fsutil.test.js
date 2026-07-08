@@ -4,12 +4,16 @@ const test = require('node:test');
 const assert = require('node:assert');
 const path = require('node:path');
 const fs = require('node:fs');
-const { renderTemplate, stripTmplExt, copyFile } = require('../lib/fsutil');
+const { renderTemplate, stripTmplExt, copyFile, resolveTemplateSource } = require('../lib/fsutil');
 
-test('renderTemplate', () => {
-  const template = 'Hello {{PROJECT_NAME}}!';
-  const result = renderTemplate(template, { PROJECT_NAME: 'Antigravity' });
-  assert.strictEqual(result, 'Hello Antigravity!');
+test('renderTemplate supports standard and dash variables', () => {
+  const template = 'Hello {{PROJECT_NAME}}! We use {{package-manager}} with {{repo-name}}.';
+  const result = renderTemplate(template, {
+    PROJECT_NAME: 'Antigravity',
+    'package-manager': 'npm',
+    'repo-name': 'my-repo'
+  });
+  assert.strictEqual(result, 'Hello Antigravity! We use npm with my-repo.');
 });
 
 test('stripTmplExt', () => {
@@ -34,4 +38,14 @@ test('copyFile rendering', () => {
   } finally {
     fs.rmSync(tmpDir, { recursive: true, force: true });
   }
+});
+
+test('resolveTemplateSource resolution', () => {
+  // Test invalid path throws
+  assert.throws(() => resolveTemplateSource(path.join(__dirname, 'non-existent-dir')), /Error: Specified template source directory does not exist/);
+
+  // Test fallback to package templates if no custom path
+  const defaultDir = resolveTemplateSource();
+  assert.strictEqual(fs.existsSync(defaultDir), true);
+  assert.strictEqual(fs.existsSync(path.join(defaultDir, 'AGENTS.md.tmpl')), true);
 });
