@@ -1,0 +1,36 @@
+# Agent Instructions — {{PROJECT_NAME}} (TypeScript)
+
+This file supplements the base AGENTS.md with TypeScript-specific guidance.
+
+## TypeScript-specific workflow
+
+1. **Strict Mode:** Always compile with `"strict": true` in tsconfig.json.
+2. **Type Safety:** Write types for public APIs; use `unknown` before `any`.
+3. **Testing:** Use Jest or Vitest; write tests first (TDD), then implement.
+4. **Linting:** Run ESLint with TypeScript plugin; fix all errors before committing.
+5. **Build:** Compile TypeScript before running; catch type errors in CI.
+
+## Language-specific principles
+
+- **Explicit over implicit:** Declare types, don't rely on inference alone
+- **Interfaces for contracts:** Define interfaces for API boundaries
+- **Discriminated unions:** Use discriminated unions for type-safe variant handling
+- **Avoid `any`:** Use generics or `unknown` instead
+- **Strict null checks:** Enable strictNullChecks to prevent null reference errors
+
+## Common pitfalls
+
+- ❌ Leaving `any` in production code
+- ❌ Not checking for null/undefined (nullish coalescing is your friend)
+- ❌ Over-using generics; keep types readable
+- ❌ Ignoring TypeScript errors with `@ts-ignore`
+- ✅ Use `.ts` for backend, `.tsx` for React components
+
+## Stack detection
+
+This room was scaffolded for TypeScript. Detected configuration:
+- **Package Manager:** {{PACKAGE_MANAGER}}
+- **Test Command:** {{TEST_COMMAND}}
+- **Lint Command:** {{LINT_COMMAND}}
+
+See `.agent-room/principles.md` and `workflow-classifier.md` for the full playbook.

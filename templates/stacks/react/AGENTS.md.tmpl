@@ -1,0 +1,37 @@
+# Agent Instructions — {{PROJECT_NAME}} (React)
+
+This file supplements the base AGENTS.md with React-specific guidance.
+
+## React-specific workflow
+
+1. **Component API:** Start with props and state; avoid lifting state too early.
+2. **Hooks:** Use React hooks (useState, useEffect, useContext); avoid class components.
+3. **Testing:** Test behavior, not implementation; use React Testing Library.
+4. **Styling:** Prefer CSS Modules or Tailwind; avoid inline styles except for dynamic values.
+5. **State Management:** Use Context API for app state; Redux only if complexity warrants.
+
+## Component design principles
+
+- **Single Responsibility:** One component = one concern
+- **Props Over State:** Push state up only when necessary
+- **Avoid Prop Drilling:** Use Context API to avoid passing props through many levels
+- **Controlled Components:** Form inputs should be controlled by React state
+- **Fragment Use:** Use `<>` for wrapper-less grouping
+
+## Common pitfalls
+
+- ❌ State mutations (e.g., `array.push()` instead of `[...array, item]`)
+- ❌ Missing dependencies in useEffect
+- ❌ Render functions inside render (creates new function every render)
+- ❌ Inline object literals as props (creates new object every render)
+- ✅ Use React DevTools profiler to find performance issues
+- ✅ Memoize expensive calculations with `useMemo`
+
+## Stack detection
+
+This room was scaffolded for React. Detected configuration:
+- **Package Manager:** {{PACKAGE_MANAGER}}
+- **Test Command:** {{TEST_COMMAND}}
+- **Lint Command:** {{LINT_COMMAND}}
+
+See `.agent-room/principles.md` and `workflow-classifier.md` for the full playbook.
