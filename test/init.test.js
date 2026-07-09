@@ -8,6 +8,21 @@ const { execFileSync } = require('node:child_process');
 const { parseSafeJSON, runInit, computeEnforcedFeatures, computeGuidanceSummary, estimateGuidanceTokens } = require('../lib/init');
 const { version: CAR_VERSION } = require('../package.json');
 
+// Several tests below pass `git: true` to runInit(), which internally runs
+// a real `git init` + `git commit` (see gitInit() in lib/init.js). A CI
+// runner (or a fresh contributor machine) may have no git identity
+// configured at all, which makes that commit fail with "please tell me who
+// you are" - files end up staged but never committed, and any test that
+// then checks for a clean working tree fails. Git respects these env vars
+// for every invocation in this process, including the ones nested inside
+// gitInit(), so this fixes it at the root rather than requiring each test
+// to pre-create .git and configure it locally. The `||` preserves a real
+// identity if one is already set (e.g. a dev machine's ~/.gitconfig).
+process.env.GIT_AUTHOR_NAME = process.env.GIT_AUTHOR_NAME || 'Test Runner';
+process.env.GIT_AUTHOR_EMAIL = process.env.GIT_AUTHOR_EMAIL || 'test-runner@example.com';
+process.env.GIT_COMMITTER_NAME = process.env.GIT_COMMITTER_NAME || 'Test Runner';
+process.env.GIT_COMMITTER_EMAIL = process.env.GIT_COMMITTER_EMAIL || 'test-runner@example.com';
+
 test('parseSafeJSON: parses standard JSON', () => {
   const json = '{"a": 1, "b": "hello"}';
   const result = parseSafeJSON(json);

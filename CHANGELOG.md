@@ -12,6 +12,16 @@ Releases before 1.2.1 predate this changelog. See `git log` and the tags
 
 ### Added
 
+- `docs/comparisons.md`, linked from `README.md`: an honest comparison
+  against hand-rolled Claude Code hooks (citing the "How to Safely Use
+  AI Coding Agents in a Real Codebase" DIY approach), the direct
+  competitor [agentic-os](https://github.com/KbWen/agentic-os), and a
+  plain `AGENTS.md`/`CLAUDE.md` with no tooling — including where
+  create-agent-room currently loses (agentic-os's evidence-gated phase
+  sequencing and published lifecycle token benchmark are both genuinely
+  more capable than anything this project has today). Competitor facts
+  were fetched live via the GitHub API and the linked docs while writing
+  it, dated, and marked `[VERIFY]` where not independently confirmable.
 - `--version`/`-v` flag (and a `version` subcommand) to the CLI, printing
   the installed `create-agent-room` version and exiting. Previously
   there was no way to check this — `.github/ISSUE_TEMPLATE/bug_report.md`
@@ -125,6 +135,18 @@ Releases before 1.2.1 predate this changelog. See `git log` and the tags
 
 ### Fixed
 
+- CI failed (though the same tests passed locally) on the genesis-commit
+  regression test in `test/init.test.js`: a fresh CI runner has no git
+  identity configured at all, so the real `git commit` inside
+  `runInit({ git: true })` failed with "please tell me who you are,"
+  leaving files staged but never committed. Fixed by setting
+  `GIT_AUTHOR_NAME`/`GIT_AUTHOR_EMAIL`/`GIT_COMMITTER_NAME`/`GIT_COMMITTER_EMAIL`
+  once at the top of the test file (git honors these for every
+  invocation in the process, including ones nested inside code under
+  test), rather than depending on the runner's ambient `~/.gitconfig`
+  existing — the same class of test-environment dependency
+  `test/guardrails-check.test.js`'s `makeRepo()` helper already avoided
+  by configuring a local identity per repo.
 - `init --tools git --git` scaffolds `.github/workflows/agent-room-validate.yml`,
   but the default `.agent-room/guardrails.json` protects `.github/workflows/**`
   — so the tool's own initial commit was rejected by the pre-commit hook it

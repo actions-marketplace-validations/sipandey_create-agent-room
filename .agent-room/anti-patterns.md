@@ -21,6 +21,41 @@ Append a new entry every time:
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-09 — CI failed on a test that passes locally: no git identity on a fresh runner
+
+**What happened:** `test/init.test.js`'s genesis-commit regression test
+(added earlier this session) failed in GitHub Actions CI with `working
+tree should be clean after a successful initial commit` — the diff
+showed every scaffolded file staged (`A`) but nothing committed. Passed
+locally every time. Root cause: this test calls `runInit(..., { git:
+true })`, which runs a real `git init` + `git add` + `git commit`
+inside `gitInit()` (`lib/init.js`). `git commit` fails with "please
+tell me who you are" if no git identity is configured anywhere, and a
+fresh `ubuntu-latest` runner has no `~/.gitconfig` at all — unlike every
+local dev machine this had been tested on, which already had a global
+identity set, silently masking the gap. `git add` still succeeds before
+the failing `commit`, which is why files showed as staged, not absent.
+**Root cause:** the test suite implicitly depended on the *runner's*
+ambient git configuration existing, instead of being hermetic. This
+project already had the right pattern elsewhere —
+`test/guardrails-check.test.js`'s `makeRepo()` helper sets local
+`user.name`/`user.email` right after `git init` — but `test/init.test.js`
+goes through `runInit()`'s *internal* `git init` (inside `gitInit()`),
+which happens too late for a test to pre-configure a local identity the
+usual way.
+**Avoid:** when a test suite invokes real git commands (directly or
+transitively through code under test), never assume the runner has a
+git identity configured — CI runners and fresh contributor machines
+often don't, even though every developer's own machine usually does,
+which is exactly what makes this invisible until CI. Fixed by setting
+`GIT_AUTHOR_NAME`/`GIT_AUTHOR_EMAIL`/`GIT_COMMITTER_NAME`/`GIT_COMMITTER_EMAIL`
+once at the top of `test/init.test.js` (git respects these env vars for
+every invocation in the process, including ones nested inside code
+under test) rather than requiring each call site to pre-create `.git`
+and configure it — verified by re-running the suite with `HOME` pointed
+at an empty directory and no ambient git env vars, reproducing and then
+fixing the exact CI failure locally.
+
 ### 2026-07-09 — changing init's default profile would have broken validate/CI for every default user
 
 **What happened:** while implementing `--profile minimal|full` for

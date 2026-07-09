@@ -72,6 +72,10 @@ These features work **only if your team commits to following them**. The tool cr
 
 For comprehensive details on what's enforced, guidance, and aspirational, see [CAPABILITIES.md](CAPABILITIES.md).
 
+Considering an alternative — hand-rolled hooks, a direct competitor, or
+just a plain `AGENTS.md`? See [docs/comparisons.md](docs/comparisons.md)
+for an honest comparison, including where this tool currently loses.
+
 ---
 
 ## Usage

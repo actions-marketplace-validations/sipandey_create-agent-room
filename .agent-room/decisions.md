@@ -16,6 +16,58 @@ have to re-derive it from scratch by reading git history.
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-09 — docs/comparisons.md: don't compare agentic-os's lifecycle token benchmark against our static corpus-size number
+
+**Decision:** `docs/comparisons.md` explicitly states that agentic-os's
+published `LIFECYCLE_BENCHMARK.md` numbers (measured multi-phase session
+token cost, e.g. ~22–27K tokens for a `quick-win` task) and
+create-agent-room's post-`init` "guidance corpus size" (a one-time
+static count of scaffolded file bytes) are **not comparable to each
+other**, even though both happen to use the same `chars/4` estimation
+formula. The doc credits agentic-os with having done real, reproducible
+measurement work here that create-agent-room hasn't, rather than
+presenting the two numbers side by side as if they answered the same
+question.
+**Why:** the two metrics measure different things — cumulative token
+cost across an entire task lifecycle (multiple phases, multiple reads,
+skill loads) versus a single static snapshot of what gets written to
+disk at `init` time. Presenting "agentic-os: 22K tokens" next to
+"create-agent-room: ~6K tokens" without that caveat would look like
+create-agent-room is 4x more token-efficient, which is not a claim this
+project can actually support — it has no equivalent lifecycle
+measurement tool at all. The request that produced this document was
+explicit that a biased comparison would backfire with its technical
+audience; a superficially favorable but methodologically unsound number
+is exactly that.
+**Rejected:** omitting agentic-os's token numbers entirely to avoid the
+comparability problem — considered, but their benchmark is a genuine,
+verifiable strength worth naming; the fix was caveating it correctly,
+not hiding it.
+
+### 2026-07-09 — verified action.yml's `@v1` usage example doesn't work yet before shipping the comparison doc
+
+**Decision:** an early draft of `docs/comparisons.md` claimed
+create-agent-room ships `action.yml` "for `uses:
+sipandey/create-agent-room@v1`" as a strength versus agentic-os. Checked
+`git tag -l` and `gh api repos/sipandey/create-agent-room/tags` before
+finalizing the doc — no `v1` tag exists yet (only full semver tags:
+`v1.2.1`, `v1.3.0`, `v1.3.1`). Corrected the doc to say the Action is
+written/tested/documented but not yet tagged or published, with a
+pointer to `ROADMAP.md` for the outstanding human step.
+**Why:** the whole premise of this document is that its credibility
+depends on being genuinely fair and fact-checked — shipping a claim
+about our own tool that doesn't actually work yet would have been a
+worse credibility failure than any bias toward create-agent-room in the
+prose, and an easy one to make by describing the *intent* of a feature
+(the Action exists and is designed for `@v1` pinning) instead of its
+*current, verified state* (untagged, so that exact invocation fails
+today).
+**Avoid:** when a comparison document cites your own project's
+capability, verify its current state the same way you'd verify a
+competitor's claim — "I wrote the code for X" and "X works today for an
+external user" are different facts, and it's easy to conflate them when
+you're the one who wrote the code.
+
 <!-- no-log: added --version/-v to bin/cli.js - a standard CLI convention that was simply missing, mirrors the existing --help short-circuit pattern exactly, no non-obvious design call or bug root-cause to record. -->
 
 ### 2026-07-09 — action.yml doesn't check out the repo itself, and version is a second pinned copy of package.json's
