@@ -60,3 +60,21 @@ monkey-patch, or a real caller that `chdir`s) has no effect on it.
 module scope if the module can be `require`d before the real working
 directory is settled. Wrap it in a function and call that function fresh
 each time the path is needed.
+
+### 2026-07-09 — guardrails-check.js self-triggers on its own guardrails.json
+
+**What happened:** discovered while dogfooding the scaffold on this repo:
+committing the freshly-generated `.agent-room/guardrails.json` tripped the
+hook's own `forbiddenActions` scan, because that file's job is to list the
+literal phrases the scanner treats as violations — so the file matches its
+own rules by definition. The scanner does a blind substring/regex match
+over all staged file content with no awareness that one of the staged
+files is the guardrails config defining those patterns in the first
+place.
+**Root cause:** the forbidden-pattern scan treated every staged file
+identically, including the guardrails config/docs that legitimately quote
+the patterns being defined.
+**Avoid:** when a scanner's rule set is itself stored in a file the scanner
+also scans, exempt that file (and its prose counterpart) from the content
+check explicitly — don't rely on the patterns "just not matching" their
+own definitions.
