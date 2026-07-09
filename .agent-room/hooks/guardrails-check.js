@@ -94,7 +94,7 @@ for (const file of stagedFiles) {
   if (guardrailsSelfPaths.has(file.replace(/\\/g, '/'))) continue;
 
   // Skip binary files and very large files
-  if (isBinaryFile(file) || fs.statSync(file).size > 1_000_000) {
+  if (isBinaryFile(file) || fs.statSync(file).size > 1000000) {
     continue;
   }
 

@@ -21,6 +21,38 @@ Append a new entry every time:
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-10 — the pre-commit hook itself crashes under a non-nvm system Node
+
+**What happened:** committing the `doctor` command feature failed with
+`SyntaxError: Invalid or unexpected token` pointing at
+`.agent-room/hooks/guardrails-check.js:97`, on the line `fs.statSync(file).size
+> 1_000_000` — a numeric-separator literal. The hook script itself was
+fine; it just ran under whatever `node` was first on `PATH`, which on
+this machine is a system-installed v10.24.1 (numeric separators were
+added in Node 12.5+). The commit only succeeded after explicitly running
+`nvm use 20.14.0` first.
+**Root cause:** git hooks execute with the shell's ambient `PATH` at
+commit time, not the Node version a project's `package.json#engines` (or
+an active `nvm`/`.nvmrc` session) implies. Nothing in `guardrails-check.js`
+or the scaffolding checks what Node version will actually run it — the
+numeric-separator syntax was written assuming a reasonably modern Node,
+which is true for anyone actively developing this repo with `nvm use`
+already run, but not guaranteed for the process spawning the git hook.
+**Avoid:** don't use ES2021+ syntax (numeric separators, etc.) in any
+file meant to run as a git hook — hooks run in whatever Node happens to
+be first on `PATH`, which is a weaker guarantee than "the Node version
+the developer is using for the rest of the project." Prefer plain numeric
+literals (`1000000`) in hook scripts specifically. This wasn't hit
+earlier only because prior commits in this session all happened to run
+with `nvm use 20.14.0` already active in the same shell.
+**Fix:** replaced `1_000_000` with `1000000` in both
+`templates/adapters/git-hooks/guardrails-check.js` (the template source)
+and `.agent-room/hooks/guardrails-check.js` (this repo's own installed
+copy, kept byte-identical since `doctor`'s hook-drift check compares
+them directly). Verified by running the hook directly under the system's
+default `node` (v10.24.1, via `nvm use system`) with no syntax error,
+where it previously crashed.
+
 ### 2026-07-09 — action.yml's description exceeded the GitHub Marketplace's undocumented-until-you-hit-it 125-character limit
 
 **What happened:** `action.yml`'s `description` field was written as a
