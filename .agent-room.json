@@ -1,0 +1,15 @@
+{
+  "name": "create-agent-room",
+  "tools": [
+    "claude",
+    "git"
+  ],
+  "language": "javascript",
+  "packageManager": "npm",
+  "defaultBranch": "main",
+  "skillPacks": [
+    "testing",
+    "release",
+    "code-review"
+  ]
+}

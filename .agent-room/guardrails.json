@@ -1,0 +1,23 @@
+{
+  "protectedPaths": [
+    "infrastructure/**",
+    "**/*.tfstate",
+    ".github/workflows/**"
+  ],
+  "requireApprovalFor": [
+    "database migrations",
+    "dependency major version bumps",
+    "changes to CI/CD pipeline",
+    "changes to authentication or authorization logic"
+  ],
+  "scopeGuidance": {
+    "maxFilesPerChange": 20,
+    "maxLinesPerChange": 500
+  },
+  "forbiddenActions": [
+    "deploy to production",
+    "delete database tables in production",
+    "modify authentication middleware without security review",
+    "commit secrets, API keys, or credentials"
+  ]
+}
