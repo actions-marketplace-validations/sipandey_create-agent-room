@@ -47,3 +47,17 @@ mid-session can silently reset it.
 
 - Do not run `git push` unless explicitly asked.
 - Do not amend or rewrite history on shared branches without being asked.
+
+## Release process
+
+The version lives in exactly one place: `version` in `package.json`. To
+cut a release: bump it (semver), then run `npm install` immediately to
+re-sync `package-lock.json` (this has drifted out of sync before when that
+step was skipped), run `npm run lint && npm test`, write
+`RELEASE_NOTES_vX.Y.Z.md` following the existing files' format, update
+`README.md`/`CAPABILITIES.md` if behavior changed, commit, and tag
+(`git tag vX.Y.Z`, matching `v1.2.1`, `v1.3.0`). See "Release process" in
+[`AGENTS.md`](AGENTS.md) for the full checklist.
+
+**Never run `npm publish`, `git push`, or `git push --tags`** — prepare
+the release locally and hand off to a human for that step.

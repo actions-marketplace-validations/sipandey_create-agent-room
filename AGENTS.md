@@ -98,4 +98,40 @@ mid-session can silently reset it.
 - Do not run `git push` unless explicitly asked.
 - Do not amend or rewrite history on shared branches without being asked.
 
+### Release process
+
+This package is published to npm as `create-agent-room`
+(https://www.npmjs.com/package/create-agent-room). The version lives in
+exactly one place: the `version` field in `package.json`. To cut a release:
+
+1. **Pick the version bump** (semver): patch for fixes, minor for
+   backward-compatible additions (new flags, templates, skill packs),
+   major for breaking changes to the CLI, flags, or scaffolded output.
+2. **Edit `version` in `package.json`.**
+3. **Run `npm install`** right after, even though nothing else changed —
+   this re-syncs `package-lock.json`'s `version` fields to match. Skipping
+   this step is how `package-lock.json` drifted out of sync with
+   `package.json` in the past (caught during an audit, not before a
+   release).
+4. **Run the full check before writing anything else:** `npm run lint &&
+   npm test` must pass clean.
+5. **Write `RELEASE_NOTES_vX.Y.Z.md`** at the repo root. Follow the
+   existing files' shape — `## Highlights` (what changed and why it
+   matters), `## Fixes`, `## Docs`, `## Housekeeping` as applicable. See
+   `RELEASE_NOTES_v1.3.0.md` for a recent example.
+6. **Update `README.md`** (and `CAPABILITIES.md` if enforcement behavior
+   changed) if commands, flags, or capabilities changed.
+7. **Commit** the version bump, lockfile, release notes, and any doc
+   updates. Past releases did this either as part of the feature commit
+   that earns the bump, or as a dedicated `chore: release vX.Y.Z` /
+   `docs: add vX.Y.Z release notes` commit — either is fine, just don't
+   silently fold a version bump into an unrelated commit's message.
+8. **Tag the release commit:** `git tag vX.Y.Z` (matches existing tags:
+   `v1.2.1`, `v1.3.0`).
+
+**Do not run `npm publish`, `git push`, or `git push --tags` yourself.**
+Publishing and pushing a tag are irreversible and externally visible —
+prepare everything above locally, then stop and hand off to a human to
+review the diff and push/publish.
+
 <!-- Add stack, conventions, and anything else an agent needs that isn't derivable. -->
