@@ -30,8 +30,6 @@ Small, cheap, clearly worth it:
   lockfile has gone stale across version bumps twice now (see
   `.agent-room/anti-patterns.md`); a one-line CI check closes it for good
   instead of relying on someone noticing during an audit.
-- **Fix stale doc claims** — README still frames the package as "once
-  published to npm," but it has been published since 1.2.1.
 
 ## Next
 

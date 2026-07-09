@@ -1,5 +1,8 @@
 # create-agent-room
 
+[![npm version](https://img.shields.io/npm/v/create-agent-room.svg)](https://www.npmjs.com/package/create-agent-room)
+[![CI](https://github.com/sipandey/create-agent-room/actions/workflows/ci.yml/badge.svg)](https://github.com/sipandey/create-agent-room/actions/workflows/ci.yml)
+
 Scaffold an LLM-agent-friendly project structure and governance framework into any new or existing project.
 
 `create-agent-room` is a **best-practices scaffolder and analytics engine** for LLM agents. It provides a generic `AGENTS.md` entry point, a principles playbook, a workflow classifier, anti-patterns/decisions logs, and custom multi-agent coordination protocols. It also supports optional thin adapters for Claude Code, Cursor, Windsurf, Cline, Git, and Codex to provide guidance and **optionally enforce** quality and governance.
@@ -65,37 +68,42 @@ For comprehensive details on what's enforced, guidance, and aspirational, see [C
 
 ## Usage
 
+`create-agent-room` is published on npm, so the usual entry point is `npx`
+— no install step needed:
+
 ```bash
 # Initialize a new project with all tool adapters, git initialization, and specific skill packs:
-node bin/cli.js init ../my-project --tools claude,cursor,git --git --skill-packs testing,security,observability
+npx create-agent-room init ../my-project --tools claude,cursor,git --git --skill-packs testing,security,observability
 
 # Scaffolding using template inheritance (Base -> Python stack -> Acme Org rules):
-node bin/cli.js init . --yes --language python --org acme
+npx create-agent-room init . --yes --language python --org acme
 
 # Fetching skill packs dynamically from a remote git repository:
-node bin/cli.js init . --yes --skill-packs https://github.com/my-org/custom-skills.git
+npx create-agent-room init . --yes --skill-packs https://github.com/my-org/custom-skills.git
 
 # Run integrity validation on the room (exits with code 1 if files are missing or skill frontmatter is malformed):
-node bin/cli.js validate .
+npx create-agent-room validate .
 
 # Generate an observability report dashboard based on session logs:
-node bin/cli.js metrics .
+npx create-agent-room metrics .
 
 # Generate a Pull Request description from the latest session log and save it:
-node bin/cli.js pr-desc . --write
+npx create-agent-room pr-desc . --write
 ```
 
 **Example: Init Command**
 
 ![Create Agent Room Init Output](docs/images/media__1783509718671.png)
 
-Once published to npm, the same commands work via `npx`:
+If you're working from a clone of this repo instead (contributing, or
+testing an unreleased change), swap `npx create-agent-room` for
+`node bin/cli.js`:
 
 ```bash
-npx create-agent-room init my-new-project
-npx create-agent-room validate .
-npx create-agent-room metrics .
-npx create-agent-room pr-desc . --write
+node bin/cli.js init my-new-project
+node bin/cli.js validate .
+node bin/cli.js metrics .
+node bin/cli.js pr-desc . --write
 ```
 
 ---

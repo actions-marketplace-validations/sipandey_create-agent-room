@@ -10,6 +10,14 @@ Releases before 1.2.1 predate this changelog. See `git log` and the tags
 
 ## [Unreleased]
 
+### Docs
+
+- README usage examples now lead with `npx create-agent-room ...` (the
+  package is confirmed published as of 1.3.1) instead of the stale "once
+  published to npm" framing; `node bin/cli.js` is now documented as the
+  from-source alternative for contributors. Added npm-version and CI
+  badges.
+
 ## [1.3.1] - 2026-07-09
 
 ### Fixed
