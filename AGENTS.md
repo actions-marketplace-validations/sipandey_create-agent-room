@@ -115,16 +115,23 @@ exactly one place: the `version` field in `package.json`. To cut a release:
    release).
 4. **Run the full check before writing anything else:** `npm run lint &&
    npm test` must pass clean.
-5. **Write `RELEASE_NOTES_vX.Y.Z.md`** at the repo root. Follow the
-   existing files' shape — `## Highlights` (what changed and why it
-   matters), `## Fixes`, `## Docs`, `## Housekeeping` as applicable. See
-   `RELEASE_NOTES_v1.3.0.md` for a recent example.
+5. **Update `CHANGELOG.md`:** rename the `## [Unreleased]` section to
+   `## [X.Y.Z] - YYYY-MM-DD`, then add a fresh empty `## [Unreleased]`
+   section above it. Follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
+   categories (`Added`, `Fixed`, `Changed`, `Removed`, etc.) — entries
+   should already exist there if `.agent-room/decisions.md` /
+   `anti-patterns.md` were kept up to date during the work, this step is
+   mostly promoting "Unreleased" to a version number, not writing from
+   scratch. Add the compare-link footer entries at the bottom of the file
+   to match the existing pattern.
+   (The old `RELEASE_NOTES_vX.Y.Z.md` per-version files are retired as of
+   `CHANGELOG.md`'s introduction — don't create new ones; the existing
+   files stay as historical record.)
 6. **Update `README.md`** (and `CAPABILITIES.md` if enforcement behavior
    changed) if commands, flags, or capabilities changed.
-7. **Commit** the version bump, lockfile, release notes, and any doc
-   updates. Past releases did this either as part of the feature commit
-   that earns the bump, or as a dedicated `chore: release vX.Y.Z` /
-   `docs: add vX.Y.Z release notes` commit — either is fine, just don't
+7. **Commit** the version bump, lockfile, changelog, and any doc updates.
+   Either as part of the feature commit that earns the bump, or as a
+   dedicated `chore: release vX.Y.Z` commit — either is fine, just don't
    silently fold a version bump into an unrelated commit's message.
 8. **Tag the release commit:** `git tag vX.Y.Z` (matches existing tags:
    `v1.2.1`, `v1.3.0`).
@@ -133,5 +140,28 @@ exactly one place: the `version` field in `package.json`. To cut a release:
 Publishing and pushing a tag are irreversible and externally visible —
 prepare everything above locally, then stop and hand off to a human to
 review the diff and push/publish.
+
+### Roadmap & issue conventions
+
+- **Before proposing new scope** (a new flag, template, integration,
+  dependency, etc.), check [`ROADMAP.md`](ROADMAP.md). If it's listed
+  under "Explicitly out of scope," don't quietly build it — either skip
+  it or explain to the human what's different about this case before
+  proceeding.
+- **When you find a real bug or a good idea that's out of scope for the
+  current task**, don't silently drop it and don't silently expand scope
+  to fix it either. Two options: fix it now if it's small and directly
+  related (following the workflow above, including the changelog/log
+  entry), or flag it clearly to the human in your response so they can
+  decide whether to open a GitHub issue using the templates in
+  `.github/ISSUE_TEMPLATE/`. Filing an issue is a visible, external
+  action — don't run `gh issue create` without being asked to, same as
+  `git push`.
+- **When a scope decision gets made** (something added to or rejected
+  from the roadmap), update `ROADMAP.md` in the same commit — move the
+  item between sections, or add a one-line reason under "Explicitly out
+  of scope." Treat this the same as a `decisions.md` entry: it's
+  forward-looking instead of retrospective, but the same "don't make the
+  next person re-derive this" rule applies.
 
 <!-- Add stack, conventions, and anything else an agent needs that isn't derivable. -->

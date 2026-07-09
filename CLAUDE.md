@@ -53,11 +53,24 @@ mid-session can silently reset it.
 The version lives in exactly one place: `version` in `package.json`. To
 cut a release: bump it (semver), then run `npm install` immediately to
 re-sync `package-lock.json` (this has drifted out of sync before when that
-step was skipped), run `npm run lint && npm test`, write
-`RELEASE_NOTES_vX.Y.Z.md` following the existing files' format, update
+step was skipped), run `npm run lint && npm test`, move `CHANGELOG.md`'s
+`[Unreleased]` section to a new `[X.Y.Z] - YYYY-MM-DD` section (per-version
+`RELEASE_NOTES_*.md` files are retired — don't create new ones), update
 `README.md`/`CAPABILITIES.md` if behavior changed, commit, and tag
 (`git tag vX.Y.Z`, matching `v1.2.1`, `v1.3.0`). See "Release process" in
 [`AGENTS.md`](AGENTS.md) for the full checklist.
 
 **Never run `npm publish`, `git push`, or `git push --tags`** — prepare
 the release locally and hand off to a human for that step.
+
+## Roadmap & issues
+
+Check [`ROADMAP.md`](ROADMAP.md) before proposing new scope — don't build
+something listed under "Explicitly out of scope" without flagging the
+mismatch first. If you find a bug or idea outside the current task, either
+fix it now (small, related, logged per the closing-the-loop rule above) or
+surface it in your response so the human can decide whether to file it
+via `.github/ISSUE_TEMPLATE/`. Never run `gh issue create` unasked — same
+rule as `git push`. When a scope decision is made, update `ROADMAP.md` in
+the same commit; see "Roadmap & issue conventions" in
+[`AGENTS.md`](AGENTS.md) for detail.

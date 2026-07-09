@@ -1,0 +1,5 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Usage question
+    url: https://github.com/sipandey/create-agent-room#readme
+    about: Check README.md and CAPABILITIES.md first - most "how do I..." and "is X enforced?" questions are already answered there.
