@@ -78,3 +78,20 @@ the patterns being defined.
 also scans, exempt that file (and its prose counterpart) from the content
 check explicitly — don't rely on the patterns "just not matching" their
 own definitions.
+
+### 2026-07-09 — package-lock.json left stale across version bumps
+
+**What happened:** `package-lock.json` still said `"version": "0.1.0"` and
+`"node": ">=14"` while `package.json` had already moved on to `1.3.0` /
+`>=18`. Caught during an audit, not before a release — nothing in CI or
+the release steps checks that the two files agree.
+**Root cause:** past version bumps edited `package.json` directly without
+following up with `npm install` (or `npm version`, which does both
+atomically) to regenerate the lockfile. `npm install` is a no-op when
+dependencies haven't changed, so the drift is silent — nothing errors,
+the lockfile is just wrong until someone happens to diff it.
+**Avoid:** always run `npm install` immediately after editing `version` in
+`package.json`, even if no dependency changed — it's now the second step
+in the documented release process (see "Release process" in
+`AGENTS.md`/`CLAUDE.md`). Consider also adding a CI check that fails if
+`package-lock.json`'s version doesn't match `package.json`'s.
