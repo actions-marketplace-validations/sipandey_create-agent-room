@@ -11,12 +11,37 @@ These features **actively block, fail, or prevent** operations if violated:
 ### Agent Guardrails (Pre-commit Hook)
 
 - **What it does:** When Git adapter is selected, a pre-commit hook reads `guardrails.json` and prevents commits that:
-  - Touch protected paths (checked via glob patterns and literal matches)
-  - Contain forbidden action patterns (regex or literal strings)
+  - Touch protected paths (checked via glob patterns and literal matches).
+    The default `protectedPaths` list is self-protecting: it includes
+    `.agent-room/guardrails.json`, `.agent-room/guardrails.md`,
+    `.agent-room/hooks/**`, and `.claude/settings.json` themselves, so a
+    later commit can't quietly weaken or delete the rules that govern it
+    without tripping the same review gate as any other protected path.
+    (The tool's own `init --git` scaffolding commit is exempt — see
+    "Bootstrapping" below — but every commit after that is covered.)
+  - Contain forbidden action patterns — each `forbiddenActions` entry is an
+    explicit `{ "pattern": "...", "type": "regex" | "literal", "description": "..." }`
+    object, not an inferred guess. The default template ships real,
+    working detection rules (AWS access key IDs, private key file headers,
+    Slack/GitHub tokens, hardcoded API key assignments) rather than prose
+    placeholders — a staged secret matching one of these is blocked, not
+    silently allowed through
   - Violate environment-variable guardrails
 - **How it fails:** Exit code 1; blocks the commit
 - **User action:** Requires `--tools git` during `init`
 - **Bypass:** Set `GUARDRAILS_BYPASS=1` environment variable for emergency commits (requires human decision)
+- **Bootstrapping:** protected-path enforcement is skipped only on a
+  repository's very first commit (no prior `HEAD`), since `init --git`
+  creates `guardrails.json` and the paths it protects in that same commit
+  — there's nothing yet to protect a change *against*. Every commit after
+  that is fully enforced, including edits to the protected-path list itself.
+- **Known limitation:** the hook evaluates `protectedPaths` against the
+  version of `guardrails.json` being committed, not the previous
+  (`HEAD`) version — so a single commit that both edits `guardrails.json`
+  *and* removes its own path from `protectedPaths` in that same edit is
+  not caught by this mechanism. Not yet fixed; treat any commit touching
+  `.agent-room/guardrails.json` as requiring manual review regardless of
+  what the hook reports.
 
 ### Session Log Format Validation
 
@@ -63,7 +88,16 @@ These features provide templates and protocols that agents must choose to follow
 
 - **What it is:** Append-only logs for recording negative knowledge and decisions
 - **Locations:** `.agent-room/anti-patterns.md`, `.agent-room/decisions.md`
-- **Enforcement:** The close-the-loop pre-commit hook (Claude only) requires updates to at least one of these files before committing
+- **Enforcement:** When using Claude Code, the Stop hook
+  (`.agent-room/hooks/close-the-loop-check.js`) blocks an agent from
+  ending its turn if it changed files outside the scaffold without
+  touching one of these logs. This is intentionally scoped to Claude
+  Code agent sessions, not a git pre-commit gate — it doesn't fire for
+  manual/human commits or other tool adapters, and it doesn't share a
+  hook with the security-relevant guardrails check (see "Agent
+  Guardrails" above), so a heavy local commit-time gate here can't teach
+  anyone to reach for `git commit --no-verify` and bypass guardrails
+  along with it.
 - **User action:** Requires manual updates by agents; not automatically populated
 
 ### Principles Playbook

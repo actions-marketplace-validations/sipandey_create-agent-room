@@ -16,6 +16,52 @@ have to re-derive it from scratch by reading git history.
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-09 — closing-the-loop enforcement moved out of the git pre-commit hook entirely
+
+**Decision:** removed the `HAS_SOURCE_CHANGES`/`HAS_LOG_TOUCHED` logic
+from `templates/adapters/git-hooks/pre-commit.tmpl`. That hook now only
+runs `guardrails-check.js`. Closing-the-loop enforcement (did this turn
+log a decision or anti-pattern?) is enforced solely by the existing
+Claude Code Stop hook, `.agent-room/hooks/close-the-loop-check.js`.
+**Why:** the pre-commit version applied to every commit — human or
+agent, regardless of whether Claude Code was even in use — since it was
+installed whenever `--tools git` was selected. Field consensus on agent
+guardrails is that a heavy local commit-time gate like this teaches
+people to reach for `git commit --no-verify` to get past it, which also
+silently disables `guardrails-check.js` running in the *same* hook —
+the one check here that's actually security-relevant (secret detection,
+protected-path enforcement). The Stop hook doesn't have this problem: it
+only fires for Claude Code agent turns, has no interaction with git
+commit flags at all, and already ships with a proper waiver escape
+hatch (a one-line `<!-- no-log: ... -->` comment) instead of an
+all-or-nothing bypass flag.
+**Rejected:** keeping both mechanisms (Stop hook for agents, pre-commit
+gate as a human backstop) — redundant, and the redundant gate is exactly
+the one that creates `--no-verify` pressure. Making the pre-commit
+version opt-out via a flag was also considered and rejected as more
+complexity for a check that already has a correctly-scoped
+implementation elsewhere.
+
+### 2026-07-09 — pin scaffolded CI workflow to a version, resolved from package.json rather than hardcoded
+
+**Decision:** the scaffolded `.github/workflows/agent-room-validate.yml`
+now runs `npx --yes create-agent-room@{{CAR_VERSION}} ...` instead of
+`@latest`, where `{{CAR_VERSION}}` is resolved in `lib/init.js` via
+`require('../package.json').version` at scaffold time and interpolated
+into the template like any other `{{VAR}}`, rather than being hardcoded
+into `github-actions.yml.tmpl` directly.
+**Why:** `@latest` meant the same commit could pass CI one week and fail
+the next purely from an upstream `create-agent-room` release, with no way
+to reproduce a past CI run. Resolving from `package.json` instead of
+hardcoding a version string into the template means every release
+automatically scaffolds workflows pinned to itself — no separate template
+edit needed at release time (which would be one more place to forget,
+matching the `package-lock.json` drift pattern already logged in
+`anti-patterns.md`).
+**Rejected:** hardcoding a literal version number in the `.tmpl` file —
+would require remembering to bump it on every release, the exact kind of
+manual sync step that's already bitten this project twice.
+
 <!-- no-log: 1.3.1 release commit (version bump, lockfile sync, changelog promotion) - follows the documented release process exactly, no new decision or anti-pattern to record. -->
 
 <!-- no-log: README.md usage section flipped to lead with npx (the package is confirmed published as of 1.3.1) instead of "once published to npm", plus npm-version/CI badges - a routine doc-accuracy fix already tracked as a ROADMAP.md "Now" item, not a new decision or bug root-cause. -->

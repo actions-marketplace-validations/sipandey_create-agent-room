@@ -21,6 +21,84 @@ Append a new entry every time:
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-09 — guardrails.json wasn't in its own protectedPaths; even fixed, the check trusts the file being edited
+
+**What happened:** `.agent-room/guardrails.json`, `.agent-room/guardrails.md`,
+`.agent-room/hooks/**`, and `.claude/settings.json` were absent from the
+default `protectedPaths` array, so any commit could edit or delete the
+rules governing it with nothing blocking that. Added them. While writing
+the regression test, an initial version tried to test the sharper attack
+— editing `guardrails.json` and stripping its own path out of
+`protectedPaths` in the same commit — and found `guardrails-check.js`
+reads `guardrails.json` live via `fs.readFileSync` at hook-run time, not
+the previous committed version, so that specific edit is *not* caught:
+the hook evaluates the newly-weakened rules against themselves and finds
+nothing wrong.
+**Root cause:** a self-referential policy file checked against its own
+post-edit state has no way to notice its own weakening — there's no
+comparison against a trusted prior version (e.g. `git show HEAD:<path>`)
+to detect "this edit removed my own protection."
+**Avoid:** don't assume adding a path to a self-referential protectedPaths
+list makes the mechanism airtight — it closes the "edit without
+protection" gap but not the "remove your own protection, then edit" gap.
+That would need the hook to diff against `HEAD`'s version of
+`guardrails.json` specifically when deciding whether *that file itself*
+is being weakened, which is unimplemented; treat any commit touching
+`.agent-room/guardrails.json` as needing manual review regardless of the
+hook's exit code. Documented as a known limitation in `CAPABILITIES.md`
+and `CHANGELOG.md` rather than silently left as a gap.
+
+### 2026-07-09 — default forbiddenActions list looked enforced but matched nothing
+
+**What happened:** the default `.agent-room/guardrails.json` shipped
+`forbiddenActions` as English-prose strings describing intent (e.g. push
+untested code to prod, or edit auth middleware without review) — but
+`guardrails-check.js`'s content scan does a
+literal-substring/regex match against staged file content. Real code
+essentially never contains that exact prose, so the scan enforced
+nothing by default while `CAPABILITIES.md` and the README both listed
+the pre-commit hook as "actively enforced." A staged real credential
+would have gone through uncaught.
+**Root cause:** the schema conflated two different things under one
+field — human-facing policy statements meant to be read, and
+machine-checkable content patterns meant to be matched. The matching
+code also *inferred* regex-vs-literal from string shape rather than
+being told explicitly, which made it easy to write an entry that looked
+like a rule but matched nothing.
+**Avoid:** when a config field feeds both a human-readable doc and a
+regex/literal matcher, split it into two fields (or two files) with an
+explicit type discriminator rather than trying to infer intent from
+string shape. Test the *positive* case for any security-scanning rule —
+stage content that should trip it and assert the tool actually blocks
+it — not just the schema-validation case; a rule that "validates" but
+never matches real content passes every test except the one that
+matters.
+
+### 2026-07-09 — guardrails' own genesis-commit blocked itself, and a broken config failed open
+
+**What happened:** two related bugs found in the guardrails machinery.
+(1) `init --tools git --git` scaffolds `.github/workflows/agent-room-validate.yml`,
+but the default `.agent-room/guardrails.json` protects `.github/workflows/**`
+— so the tool's own first commit tripped the pre-commit hook it had just
+installed, and `lib/init.js`'s `gitInit()` swallowed the real error, printing
+a misleading generic "skipped" message instead of the actual guardrails
+rejection. (2) `guardrails-check.js` called `process.exit(0)` (allow) when
+`.agent-room/guardrails.json` failed to `JSON.parse` — a corrupted config
+silently disabled all enforcement instead of blocking the commit.
+**Root cause:** (1) protected-path enforcement didn't distinguish a
+repository's first commit (nothing established yet to protect) from a later
+edit to already-established infrastructure, and `gitInit()` discarded
+`execFileSync`'s stderr instead of surfacing it. (2) the parse-failure
+branch defaulted to fail-open instead of fail-closed — the safe default for
+a security gate whose config can't be trusted.
+**Avoid:** when a scaffolding tool installs both a policy file and the files
+that policy protects in the same commit, exempt only that first commit
+(detect via `git rev-parse --verify HEAD` failing), not the path pattern
+itself — weakening the pattern to "block edits, not creation" would let any
+later new file bypass review forever. Any enforcement hook should fail
+closed on its own config being unparseable, with an explicit bypass escape
+hatch, not fail open.
+
 ### 2026-07-09 — shell injection via string-interpolated execSync in git hooks
 
 **What happened:** `templates/adapters/git-hooks/guardrails-check.js` and

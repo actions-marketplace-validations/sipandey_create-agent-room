@@ -21,8 +21,6 @@ this says *what we're planning and why we're not planning Y*.
 
 Small, cheap, clearly worth it:
 
-- **`SECURITY.md`** — a disclosure process. Costs nothing, currently
-  missing.
 - **`--dry-run` for `init`** — print what would be created/skipped without
   writing anything. Fits the existing hand-rolled flag parser; no new
   dependency needed.

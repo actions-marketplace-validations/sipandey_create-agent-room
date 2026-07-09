@@ -30,7 +30,18 @@ let guardrails = {};
 try {
   guardrails = JSON.parse(fs.readFileSync(guardrailsPath, 'utf8'));
 } catch (err) {
-  console.error(`⚠️  Failed to parse guardrails.json: ${err.message}`);
+  console.error('');
+  console.error(`❌ .agent-room/guardrails.json is broken and could not be parsed: ${err.message}`);
+  console.error('Commits are blocked until this file is fixed (failing closed, since a');
+  console.error('corrupted config must not silently disable guardrail enforcement).');
+  console.error('');
+  console.error('To bypass while you fix it, use:');
+  console.error('  GUARDRAILS_BYPASS=1 git commit');
+  console.error('');
+  if (!ALLOW_GUARDRAILS_BYPASS) {
+    process.exit(1);
+  }
+  console.warn('⚠️  Guardrails bypass enabled - proceeding with commit despite broken config');
   process.exit(0);
 }
 
@@ -49,11 +60,18 @@ const forbiddenPatterns = guardrails.forbiddenActions || [];
 
 let violations = [];
 
-// Check protected paths
-for (const file of stagedFiles) {
-  for (const protectedPath of protectedPaths) {
-    if (isPathProtected(file, protectedPath)) {
-      violations.push(`Protected path violation: ${file}`);
+// A repository's very first commit has nothing established yet to protect -
+// the scaffolding tool creates the protected paths (e.g. CI workflows) in
+// the same commit as guardrails.json itself. Protected-path review exists to
+// gate *changes* to already-established infrastructure, not its initial
+// creation, so it's skipped only for this one commit. Forbidden-pattern
+// (secret) scanning below still applies regardless.
+if (!isInitialCommit()) {
+  for (const file of stagedFiles) {
+    for (const protectedPath of protectedPaths) {
+      if (isPathProtected(file, protectedPath)) {
+        violations.push(`Protected path violation: ${file}`);
+      }
     }
   }
 }
@@ -81,13 +99,15 @@ for (const file of stagedFiles) {
     // Get staged content (not working tree)
     const stagedContent = execFileSync('git', ['show', `:${file}`], { encoding: 'utf8' });
 
-    for (const pattern of forbiddenPatterns) {
-      if (pattern.match(/^\/.*\/[gimuy]*$/) || pattern.startsWith('(?:') || pattern.includes('(?:')) {
-        // It's a regex
+    for (const entry of forbiddenPatterns) {
+      const { pattern, type, label } = normalizeForbiddenEntry(entry);
+      if (!pattern) continue;
+
+      if (type === 'regex') {
         try {
-          const regex = new RegExp(pattern);
+          const regex = new RegExp(pattern, 'i');
           if (regex.test(stagedContent)) {
-            violations.push(`Forbidden pattern found in ${file}: ${pattern}`);
+            violations.push(`Forbidden pattern found in ${file}: ${label}`);
           }
         } catch (regexErr) {
           // Invalid regex, skip
@@ -95,7 +115,7 @@ for (const file of stagedFiles) {
       } else {
         // Literal string
         if (stagedContent.includes(pattern)) {
-          violations.push(`Forbidden pattern found in ${file}: ${pattern}`);
+          violations.push(`Forbidden pattern found in ${file}: ${label}`);
         }
       }
     }
@@ -124,6 +144,34 @@ if (violations.length > 0) {
 }
 
 process.exit(0);
+
+// forbiddenActions entries are normally { pattern, type: "regex"|"literal",
+// description } objects. Flat strings from the pre-schema config format are
+// still accepted (inferring regex-vs-literal the old, best-effort way) so
+// existing projects aren't silently left unprotected until they migrate.
+function normalizeForbiddenEntry(entry) {
+  if (typeof entry === 'string') {
+    const looksLikeRegex = entry.match(/^\/.*\/[gimuy]*$/) || entry.startsWith('(?:') || entry.includes('(?:');
+    return { pattern: entry, type: looksLikeRegex ? 'regex' : 'literal', label: entry };
+  }
+  if (entry && typeof entry === 'object' && typeof entry.pattern === 'string') {
+    return {
+      pattern: entry.pattern,
+      type: entry.type === 'regex' ? 'regex' : 'literal',
+      label: entry.description || entry.pattern
+    };
+  }
+  return { pattern: null, type: null, label: null };
+}
+
+function isInitialCommit() {
+  try {
+    execFileSync('git', ['rev-parse', '--verify', 'HEAD'], { stdio: 'ignore' });
+    return false;
+  } catch (err) {
+    return true;
+  }
+}
 
 function isPathProtected(filePath, protectedPattern) {
   // Normalize paths for comparison

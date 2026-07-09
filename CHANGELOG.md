@@ -10,6 +10,95 @@ Releases before 1.2.1 predate this changelog. See `git log` and the tags
 
 ## [Unreleased]
 
+### Added
+
+- `SECURITY.md`: a standard vulnerability-disclosure process (private
+  reporting via GitHub Security Advisories, expected response times,
+  supported-versions policy). Previously listed as missing in
+  `ROADMAP.md`'s "Now" section; removed from there now that it's done.
+
+### Changed
+
+- The scaffolded `.github/workflows/agent-room-validate.yml` pinned
+  `npx --yes create-agent-room@latest validate/lint-sessions` to
+  `@latest`, meaning the same commit could pass CI one week and fail the
+  next with no version reproducibility. `init` now interpolates a
+  `{{CAR_VERSION}}` template var resolved from this package's own
+  `package.json` at scaffold time, so generated workflows pin to the
+  exact version that scaffolded them, with a comment explaining how to
+  bump it (`init --force` again, or hand-edit the version).
+- The scaffolded git `pre-commit` hook enforced closing-the-loop
+  discipline (blocking any commit that touched non-scaffold files
+  without also updating `.agent-room/anti-patterns.md` or
+  `decisions.md`) for *every* commit — human or agent. Field consensus
+  on agent guardrails is that a heavy local commit-time gate like this
+  teaches people to reach for `git commit --no-verify`, which then also
+  bypasses the guardrails-check.js run in the same hook — the actually
+  security-relevant check. `pre-commit.tmpl` now only runs
+  `guardrails-check.js`; closing-the-loop enforcement stays exactly
+  where it already correctly lived, the Claude Code Stop hook
+  (`.agent-room/hooks/close-the-loop-check.js`, wired via
+  `installCloseTheLoopHook`), which is scoped to agent sessions and
+  doesn't share a hook with guardrails. `README.md`/`CAPABILITIES.md`
+  updated to describe closing-the-loop enforcement as Claude-agent-scoped
+  rather than a universal commit gate.
+
+### Fixed
+
+- `init --tools git --git` scaffolds `.github/workflows/agent-room-validate.yml`,
+  but the default `.agent-room/guardrails.json` protects `.github/workflows/**`
+  — so the tool's own initial commit was rejected by the pre-commit hook it
+  had just installed. `guardrails-check.js` now exempts protected-path
+  enforcement on a repository's very first commit only (detected via
+  `git rev-parse --verify HEAD` having no prior `HEAD`), since there's
+  nothing yet to protect a change *against* — the forbidden-pattern/secret
+  scan still applies to that commit. `gitInit()` in `lib/init.js` also now
+  captures the real `git commit` stderr instead of collapsing every failure
+  into a generic "skipped" message, and calls out guardrails-blocked
+  failures explicitly with the `GUARDRAILS_BYPASS=1` escape hatch.
+- `guardrails-check.js` failed *open* (`process.exit(0)`, allowing the
+  commit) when `.agent-room/guardrails.json` failed to parse, silently
+  disabling all guardrail enforcement on a corrupted config. It now fails
+  closed (`exit 1`) with a clear error, still overridable via
+  `GUARDRAILS_BYPASS=1`.
+- The default `guardrails.json`'s `forbiddenActions` list was plain English
+  prose (e.g. describing what not to do), which the pre-commit content scan
+  matched as a literal substring — meaning it would essentially never match
+  real staged code, so a genuinely risky credential could be staged and
+  committed without the hook noticing. `forbiddenActions` entries are now
+  explicit `{ "pattern", "type": "regex" | "literal", "description" }`
+  objects, and the default template ships working detection rules (AWS
+  access key IDs, private key file headers, Slack/GitHub token formats, a
+  generic hardcoded-API-key assignment pattern) instead of prose
+  placeholders. The old flat-string entries are still accepted by the hook
+  for backward compatibility (inferring regex-vs-literal the previous
+  best-effort way) but `validate` now warns on them, since they carry no
+  real detection pattern. The human-facing prose intents (deploy-to-prod,
+  auth-middleware review, etc.) moved to `guardrails.md`, which was always
+  meant to be read rather than pattern-matched. `lib/validate.js` and
+  `CAPABILITIES.md`/`README.md` were updated to describe the new schema.
+- The default `protectedPaths` list didn't cover the guardrails machinery
+  itself — `.agent-room/guardrails.json`, `.agent-room/guardrails.md`,
+  `.agent-room/hooks/**`, and `.claude/settings.json` could be edited or
+  deleted in the same diff as an unrelated change with nothing blocking
+  it. These four paths are now in the default `protectedPaths` array. This
+  is independent of (and doesn't reopen) the existing
+  `guardrailsSelfPaths` content-scan exemption from 1.3.1: that exemption
+  only stops `guardrails.json`/`guardrails.md` from self-triggering the
+  forbidden-*pattern* scan because they legitimately quote those patterns
+  as data; it says nothing about whether the files may be staged at all.
+  Path protection and content-scan exemption are orthogonal checks and now
+  both hold at once — a commit editing `guardrails.json` is blocked as a
+  protected-path violation regardless of what changed inside it, while its
+  *content* still isn't flagged as containing a forbidden pattern for
+  merely defining one. The existing genesis-commit exemption (also from
+  this cycle) covers these new paths automatically, since `init --git`
+  creates them in the same first commit as everything else. **Known
+  limitation, documented but not fixed here:** the hook evaluates
+  `protectedPaths` against the version of `guardrails.json` being
+  committed, so a single commit that edits `guardrails.json` *and* strips
+  its own path out of `protectedPaths` in that same edit isn't caught.
+
 ### Docs
 
 - README usage examples now lead with `npx create-agent-room ...` (the

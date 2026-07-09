@@ -14,7 +14,7 @@ Scaffold an LLM-agent-friendly project structure and governance framework into a
 ## Features
 
 - **Multi-Agent Coordination**: Scaffolds templates for handoffs, scope boundaries, and structured session logs. *[Guidance only; requires human discipline to follow protocols]*
-- **Agent Guardrails**: Defines protected paths, require-approval rules, and forbidden actions via `guardrails.json`. *[Actively enforced via pre-commit hook when Git adapter selected]*
+- **Agent Guardrails**: Defines protected paths, require-approval rules, and forbidden actions via `guardrails.json`. Forbidden actions are explicit `{ "pattern", "type": "regex" | "literal", "description" }` rules (AWS keys, private key headers, API tokens, etc. by default) — not free-text prose. The default `protectedPaths` list also covers the guardrails machinery itself (`guardrails.json`, `guardrails.md`, `.agent-room/hooks/**`, `.claude/settings.json`), so a later commit can't quietly edit or delete the rules governing it. *[Actively enforced via pre-commit hook when Git adapter selected]*
 - **Session Log Format Enforcement**: Validates session logs against required structure via `lint-sessions` command. *[Actively enforced; fails CI if logs malformed]*
 - **Inheritance & Composition**: Composes templates sequentially from base structures, stack-specific files (e.g. Python, React), org-specific conventions (`--org <name>`), and project overrides. *[Framework provided; stack templates must be created or inherited]*
 - **Built-in & External Skill Packs**: Standard templates (testing, security, database-migrations, api-design, code-review, performance, observability, docs) or remote skill packs directly from Git repositories and local paths. *[Documentation and guidance; not executable rules]*
@@ -38,7 +38,7 @@ These features provide templates and protocols that agents must choose to follow
 
 - **Workflow Classifier** — Guides agents to tag work as Bug / Enhancement / Feature / Product (not automatically enforced)
 - **Multi-Agent Coordination Protocols** — Handoff, scope, session log format templates exist but agents must follow them manually
-- **Anti-patterns & Decisions Logs** — Require manual updates; no automated enforcement
+- **Anti-patterns & Decisions Logs** — Require manual updates. When using Claude Code, the Stop hook blocks an *agent* from ending its turn without logging (see below); there is no git-level enforcement for human commits or other tools
 - **Principles Playbook** — 12 guidelines for reliable LLM output; agents must apply them
 
 ### 🔵 Aspirational/Framework Features

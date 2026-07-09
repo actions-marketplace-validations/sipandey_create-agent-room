@@ -4,7 +4,9 @@ const test = require('node:test');
 const assert = require('node:assert');
 const path = require('node:path');
 const fs = require('node:fs');
+const { execFileSync } = require('node:child_process');
 const { parseSafeJSON, runInit } = require('../lib/init');
+const { version: CAR_VERSION } = require('../package.json');
 
 test('parseSafeJSON: parses standard JSON', () => {
   const json = '{"a": 1, "b": "hello"}';
@@ -92,8 +94,41 @@ test('runInit: scaffolds git pre-commit hook when requested', async (t) => {
   assert.ok(fs.existsSync(ciWorkflowPath), 'CI workflow should exist');
 
   const ciWorkflowContent = fs.readFileSync(ciWorkflowPath, 'utf8');
-  assert.match(ciWorkflowContent, /create-agent-room@latest validate/);
-  assert.match(ciWorkflowContent, /create-agent-room@latest lint-sessions/);
+  assert.match(ciWorkflowContent, new RegExp(`create-agent-room@${CAR_VERSION} validate`));
+  assert.match(ciWorkflowContent, new RegExp(`create-agent-room@${CAR_VERSION} lint-sessions`));
+  assert.doesNotMatch(ciWorkflowContent, /create-agent-room@latest/);
+});
+
+test('runInit: creates a clean initial commit when --git is passed (regression: guardrails must not block the tool\'s own genesis commit)', async (t) => {
+  const tmpDir = path.join(__dirname, 'tmp-genesis-commit-' + Date.now());
+  fs.mkdirSync(tmpDir, { recursive: true });
+
+  t.after(() => {
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  });
+
+  await runInit(tmpDir, {
+    yes: true,
+    tools: 'git',
+    name: 'GenesisCommitTest',
+    git: true,
+    force: true
+  });
+
+  // The .github/workflows/** path is protected by the default guardrails
+  // template, and the scaffold creates a workflow file under it. The
+  // initial commit must still succeed cleanly (not be silently skipped).
+  const status = execFileSync('git', ['status', '--porcelain'], { cwd: tmpDir, encoding: 'utf8' });
+  assert.strictEqual(status.trim(), '', 'working tree should be clean after a successful initial commit');
+
+  const log = execFileSync('git', ['log', '--oneline'], { cwd: tmpDir, encoding: 'utf8' });
+  assert.match(log, /Scaffold project with create-agent-room/);
+
+  const committedFiles = execFileSync('git', ['show', '--stat', '--name-only', 'HEAD'], {
+    cwd: tmpDir,
+    encoding: 'utf8'
+  });
+  assert.match(committedFiles, /\.github\/workflows\/agent-room-validate\.yml/);
 });
 
 test('runInit: scaffolds with custom parameters and optional skill packs', async (t) => {

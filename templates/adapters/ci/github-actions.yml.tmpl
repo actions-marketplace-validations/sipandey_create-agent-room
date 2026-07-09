@@ -14,7 +14,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      # Pinned to the create-agent-room version active when this workflow was
+      # scaffolded, so CI results stay reproducible across runs. To pick up
+      # fixes from a newer release, re-run `create-agent-room init --force`
+      # (or bump the version below by hand) and commit the change.
       - name: Validate {{PROJECT_NAME}} agent-room structure
-        run: npx --yes create-agent-room@latest validate .
+        run: npx --yes create-agent-room@{{CAR_VERSION}} validate .
       - name: Lint session logs
-        run: npx --yes create-agent-room@latest lint-sessions .
+        run: npx --yes create-agent-room@{{CAR_VERSION}} lint-sessions .

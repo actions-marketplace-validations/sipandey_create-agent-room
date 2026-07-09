@@ -35,7 +35,9 @@ Keep individual changes focused and reviewable:
 
 ## Forbidden actions
 
-Actions agents must never take, regardless of context:
+Actions agents must never take, regardless of context. These are
+human-facing intents — read and follow them; they are not something a
+regex can check for you:
 
 - Deploy to production without human approval
 - Delete database tables or collections in production
@@ -43,6 +45,15 @@ Actions agents must never take, regardless of context:
 - Commit secrets, API keys, or credentials to the repository
 - Disable or skip tests to make a build pass
 - Suppress security audit warnings without documenting why
+
+The narrower, mechanically-checkable case — "does this diff literally
+contain something that looks like a credential" — is enforced separately
+by the pre-commit hook, which pattern-matches staged content against the
+`forbiddenActions` entries in `.agent-room/guardrails.json` (AWS keys,
+private key headers, API token formats, and similar). That JSON list is
+deliberately narrow and pattern-based; it can't catch "committed a secret
+in a format we didn't anticipate," so the prose rule above still applies
+even where the hook stays silent.
 
 ## How to use this file
 
