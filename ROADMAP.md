@@ -24,12 +24,8 @@ this says *what we're planning and why we're not planning Y*.
 
 ## Now
 
-Small, cheap, clearly worth it:
-
-- **CI check for `package.json`/`package-lock.json` version drift** — the
-  lockfile has gone stale across version bumps twice now (see
-  `.agent-room/anti-patterns.md`); a one-line CI check closes it for good
-  instead of relying on someone noticing during an audit.
+Small, cheap, clearly worth it — currently empty; check `## Next` for
+what's queued up.
 
 ## Next
 

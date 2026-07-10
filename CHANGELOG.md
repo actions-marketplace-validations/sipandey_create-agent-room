@@ -10,7 +10,23 @@ Releases before 1.2.1 predate this changelog. See `git log` and the tags
 
 ## [Unreleased]
 
+### Fixed
+
+- `.agent-room/hooks/guardrails-check.js` and
+  `templates/adapters/git-hooks/guardrails-check.js` used a numeric
+  separator (`1_000_000`) that throws a `SyntaxError` under Node <12.5 —
+  git hooks run under whatever `node` is first on `PATH`, not necessarily
+  the version a contributor's shell has active. Replaced with a plain
+  literal.
+
 ### Added
+
+- CI check (`npm run check:lockfile`, wired into `.github/workflows/ci.yml`)
+  that fails the build if `package-lock.json`'s recorded version doesn't
+  match `package.json`'s — `package-lock.json` has gone stale across
+  version bumps twice before (see `.agent-room/anti-patterns.md`); this
+  closes it for good instead of relying on someone noticing during an
+  audit.
 
 - `create-agent-room doctor [target-dir]` — a read-only health check that
   works whether or not `init` has ever been run. On an unscaffolded

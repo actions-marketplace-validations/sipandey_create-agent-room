@@ -40,7 +40,8 @@
   "author": "Siddharth Pandey",
   "scripts": {
     "test": "node --test test/*.test.js",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "check:lockfile": "node scripts/check-lockfile-version.js"
   },
   "devDependencies": {
     "eslint": "^8.57.0"

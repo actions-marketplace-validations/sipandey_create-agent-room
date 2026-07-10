@@ -16,6 +16,28 @@ have to re-derive it from scratch by reading git history.
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-10 — added a CI check for package.json/package-lock.json version drift as a small Node script, not an inline shell one-liner
+
+**Decision:** added `scripts/check-lockfile-version.js` (compares
+`package.json`'s `version` against both `package-lock.json`'s top-level
+`version` and `packages[""].version`) and wired it into `.github/workflows/ci.yml`
+as `npm run check:lockfile`, run right after `npm ci` and before `lint`/`test`.
+**Why:** this exact drift has bitten the project twice already (see
+`.agent-room/anti-patterns.md`), and it's silent — `npm install` no-ops
+when dependencies haven't changed, so nothing errors until someone
+happens to diff the two files during a release audit. A Node script
+(rather than a `jq`/`grep` one-liner in the workflow YAML) matches how
+every other check in this repo is written, is testable the same way
+(ran it against a deliberately-mismatched copy in the scratchpad to
+confirm the failure path exits 1 with a clear message), and doesn't
+require assuming `jq` is present on the runner.
+**Rejected:** checking both `package.json` and `package-lock.json`
+versions in `lib/checks.js`/`doctor` instead — that module is about
+auditing a *scaffolded room*, not this repository's own release
+hygiene; conflating the two would mean every project scaffolded by this
+tool inherits a check about npm publishing that has nothing to do with
+them.
+
 ### 2026-07-10 — added `doctor`, extracting `lib/checks.js` out of `lib/validate.js` first
 
 **Decision:** added `create-agent-room doctor [target-dir]`, a strictly
