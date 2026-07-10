@@ -16,6 +16,30 @@ have to re-derive it from scratch by reading git history.
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-10 — DRY'd the tool adapters into a table, but kept `claude`/`git` as explicit blocks
+
+**Decision:** replaced the four near-identical `cursor`/`windsurf`/`cline`/
+`codex` blocks in `runInit` (each a single `copyFileInherited` wrapped in
+`Object.assign({ path }, ...)`) with a module-level `SIMPLE_TOOL_ADAPTERS`
+table and one loop. Deliberately left `claude` and `git` OUT of the table
+and as their own explicit `if (tools.includes(...))` blocks.
+**Why:** `claude` and `git` aren't single-file copies — `claude` also
+mirrors skills into `.claude/` and installs the Stop hook, and `git`
+needs an initialized repo and installs two hook files (`pre-commit` +
+`guardrails-check.js`) plus scaffolds the CI workflow. Forcing them into
+a "template -> destParts" table would mean the table needs an escape
+hatch (per-entry callbacks / side-effect flags) for exactly two of six
+tools, which is more complexity than the four uniform cases save. The
+table earns its keep precisely because it only describes the cases that
+are actually uniform. Net −30 lines, all 115 tests green, verified
+end-to-end that all four adapters (including `codex`, which had no
+explicit test) still scaffold with correct `{{VAR}}` interpolation.
+**Rejected:** a fully general adapter table with optional
+`sideEffect`/`postCopy` hooks covering all six tools — it would put the
+two genuinely-special tools' logic behind an indirection for no real
+dedup gain, making the common path harder to read to accommodate two
+outliers.
+
 ### 2026-07-10 — added a CI check for package.json/package-lock.json version drift as a small Node script, not an inline shell one-liner
 
 **Decision:** added `scripts/check-lockfile-version.js` (compares

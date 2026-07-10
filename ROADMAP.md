@@ -34,9 +34,6 @@ Worth doing, more effort, still in keeping with the project's scope:
 - **A few more stack templates** (currently python/typescript/react) —
   organic growth as real usage demands them, not a race to a specific
   number.
-- **DRY up the per-adapter blocks in `lib/init.js`** — cursor/windsurf/
-  cline/codex each repeat a near-identical `copyFileInherited` call; a
-  small table-driven loop would cut ~40 lines with no behavior change.
 - **Publish `action.yml` to the GitHub Marketplace** — the Action itself
   is written, tested, and documented (`docs/github-action.md`); the
   `v2.0.0` release created a rolling `v2` major tag (per Marketplace
