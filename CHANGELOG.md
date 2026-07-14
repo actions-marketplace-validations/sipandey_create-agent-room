@@ -12,6 +12,33 @@ Releases before 1.2.1 predate this changelog. See `git log` and the tags
 
 ### Added
 
+- `npm run check:doctor` (`scripts/check-doctor-clean.js`), wired into
+  this project's own `.github/workflows/ci.yml`: fails the build if
+  `create-agent-room doctor .` reports any finding for this repo
+  specifically. `lib/doctor.js` now exports a pure `getFindings(target)`
+  (no console output), extracted from `runDoctor()` the same way
+  `collectFindings()` was extracted from `validate` — used internally by
+  `runDoctor` and directly by the new CI script, so the two can never
+  drift on what counts as a finding. `doctor`'s own CLI behavior and
+  (always-zero) exit code for end users are unchanged; this is a
+  project-specific self-check, not a new product feature.
+
+### Fixed
+
+- Three findings `doctor` had been correctly flagging on this repo
+  itself, unaddressed until this CI gate existed to catch them: the
+  installed `.git/hooks/pre-commit` had drifted from the current
+  (narrower) template; `.agent-room/guardrails.json` had only the 4
+  legacy flat-string `forbiddenActions` entries and none of the 5 real
+  regex-based rules the shipped template already has — meaning this
+  repo's own commits had zero functional secret-scanning — and was also
+  missing the guardrails-self-protection `protectedPaths` entries; and
+  `.github/workflows/agent-room-validate.yml` still pinned
+  `create-agent-room@latest` instead of a specific version. All three
+  are now re-synced to match the current templates/version.
+
+### Added
+
 - `guardrails.json`'s `scopeGuidance` (`maxFilesPerChange`,
   `maxLinesPerChange`) is now mechanically enforced by the pre-commit hook
   — previously declared in the shipped schema but never read anywhere.

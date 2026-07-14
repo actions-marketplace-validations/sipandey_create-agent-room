@@ -16,6 +16,31 @@ have to re-derive it from scratch by reading git history.
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-14 — added a project-specific `check:doctor` CI gate instead of changing doctor's own exit-code contract
+
+**Decision:** three `doctor` findings on this repo (hook drift, legacy
+`forbiddenActions` format, CI `@latest` pin) were fixed directly, and a
+new `scripts/check-doctor-clean.js` was wired into this project's own
+`.github/workflows/ci.yml` as `npm run check:doctor` — it fails the build
+if `getFindings('.')` (a new pure function extracted from
+`lib/doctor.js`, same pattern as `collectFindings()` in `lib/checks.js`)
+returns any critical or advisory item for this repo. `doctor`'s own CLI
+behavior, wording, and always-zero exit code for end users are
+unchanged.
+**Why:** `doctor` is deliberately advisory for end users — a scaffolded
+room's hooks or CI file might be legitimately customized, so it must
+never block someone else's build over a difference it doesn't have
+context for. That correctness is exactly why the same class of drift
+recurred three times in this repo specifically: nothing was ever
+required to run `doctor` here, and CI never called it. Rather than
+weaken `doctor`'s advisory-only contract for everyone to close that gap,
+add a gate that only applies to this repo's own CI, mirroring
+`check:lockfile`'s shape exactly.
+**Rejected:** making `doctor` exit non-zero whenever it finds anything —
+would break the tool's own stated design (`doctor` vs. `validate`: see
+the 2026-07-10 entry below) for every user who intentionally customized
+a hook or hasn't gotten around to bumping a CI pin yet.
+
 ### 2026-07-13 — enforced `scopeGuidance` and added a durable bypass log, both in the pre-commit hook
 
 **Decision:** found two real gaps by auditing this project's own guardrails

@@ -5,7 +5,7 @@ const assert = require('node:assert');
 const path = require('node:path');
 const fs = require('node:fs');
 const { runInit } = require('../lib/init');
-const { runDoctor } = require('../lib/doctor');
+const { runDoctor, getFindings } = require('../lib/doctor');
 
 async function captureConsoleLog(asyncFn) {
   const lines = [];
@@ -157,4 +157,62 @@ test('runDoctor: reports real structural errors (e.g. missing AGENTS.md) under "
 
   assert.match(output, /Needs attention/);
   assert.match(output, /Missing required file: AGENTS\.md/);
+});
+
+// --- getFindings(): the pure function runDoctor prints, and the CI gate
+// (scripts/check-doctor-clean.js) consumes directly, without parsing any
+// printed/colored text. These mirror the runDoctor-level scenarios above,
+// but assert on the returned data shape instead of console output.
+
+test('getFindings: returns notSetUp true, with empty arrays, for a directory with no .agent-room/', async (t) => {
+  const tmpDir = path.join(__dirname, 'tmp-findings-unscaffolded-' + Date.now());
+  fs.mkdirSync(tmpDir, { recursive: true });
+  t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+  const findings = getFindings(tmpDir);
+
+  assert.strictEqual(findings.notSetUp, true);
+  assert.deepStrictEqual(findings.critical, []);
+  assert.deepStrictEqual(findings.advisory, []);
+});
+
+test('getFindings: returns empty critical/advisory for a clean minimal-profile room', async (t) => {
+  const tmpDir = path.join(__dirname, 'tmp-findings-clean-' + Date.now());
+  fs.mkdirSync(tmpDir, { recursive: true });
+  t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+  await runInit(tmpDir, { yes: true, tools: 'claude,git', git: true, name: 'FindingsCleanTest', force: true });
+
+  const findings = getFindings(tmpDir);
+
+  assert.strictEqual(findings.notSetUp, false);
+  assert.deepStrictEqual(findings.critical, []);
+  assert.deepStrictEqual(findings.advisory, []);
+  assert.strictEqual(findings.isMinimalProfile, true);
+});
+
+test('getFindings: surfaces hook drift in advisory, matching what runDoctor prints', async (t) => {
+  const tmpDir = path.join(__dirname, 'tmp-findings-drift-' + Date.now());
+  fs.mkdirSync(tmpDir, { recursive: true });
+  t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+  await runInit(tmpDir, { yes: true, tools: 'git', git: true, name: 'FindingsDriftTest', force: true });
+  fs.appendFileSync(path.join(tmpDir, '.agent-room', 'hooks', 'guardrails-check.js'), '\n// stale\n');
+
+  const findings = getFindings(tmpDir);
+
+  assert.ok(findings.advisory.some((a) => a.includes("doesn't match the currently installed CLI's template")));
+});
+
+test('getFindings: surfaces real structural errors as critical', async (t) => {
+  const tmpDir = path.join(__dirname, 'tmp-findings-broken-' + Date.now());
+  fs.mkdirSync(tmpDir, { recursive: true });
+  t.after(() => fs.rmSync(tmpDir, { recursive: true, force: true }));
+
+  await runInit(tmpDir, { yes: true, tools: 'none', name: 'FindingsBrokenTest', force: true });
+  fs.rmSync(path.join(tmpDir, 'AGENTS.md'), { force: true });
+
+  const findings = getFindings(tmpDir);
+
+  assert.ok(findings.critical.includes('Missing required file: AGENTS.md'));
 });

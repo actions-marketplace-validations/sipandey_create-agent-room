@@ -41,7 +41,8 @@
   "scripts": {
     "test": "node --test test/*.test.js",
     "lint": "eslint .",
-    "check:lockfile": "node scripts/check-lockfile-version.js"
+    "check:lockfile": "node scripts/check-lockfile-version.js",
+    "check:doctor": "node scripts/check-doctor-clean.js"
   },
   "devDependencies": {
     "eslint": "^8.57.0"

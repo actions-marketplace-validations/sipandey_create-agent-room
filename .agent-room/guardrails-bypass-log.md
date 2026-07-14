@@ -10,3 +10,4 @@ instead of scrolling off a terminal and being forgotten.
 
 <!-- Entries below this line, newest first, appended automatically. -->
 - 2026-07-14T08:23:12.810Z | author: Siddharth Pandey <siddharth.pandey06@gmail.com> | bypassed: Change scope exceeds guidance: 555 lines changed (limit 500)
+- 2026-07-14T08:43:05.767Z | author: Siddharth Pandey <siddharth.pandey06@gmail.com> | bypassed: Protected path violation: .agent-room/guardrails.json; Protected path violation: .github/workflows/agent-room-validate.yml; Protected path violation: .github/workflows/ci.yml; Forbidden pattern found in CHANGELOG.md: AWS access key ID

@@ -21,6 +21,34 @@ Append a new entry every time:
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-14 — this repo's own guardrails.json had zero functional secret-detection rules
+
+**What happened:** while designing a fix for `doctor`'s "legacy
+flat-string format" finding, checked what this repo's own
+`.agent-room/guardrails.json` actually contained — not just that it had
+*some* legacy entries, but *all four* of its `forbiddenActions` were
+legacy flat strings, and it had *none* of the 5 real regex-based rules
+(AWS key, private key, API key, Slack token, GitHub token) the shipped
+template already ships. This repo's own commits have had no functional
+secret-scanning this whole time — the exact "looked enforced but matched
+nothing" bug already fixed once in the packaged template (see the
+2026-07-09 entry below), still live in our own file. It was also missing
+the guardrails-self-protection `protectedPaths` entries added the same
+session that fix landed, so `.agent-room/guardrails.json` itself
+could have been edited without tripping the protection built specifically
+to prevent that.
+**Root cause:** same as the hook-drift entry directly below this one —
+this repo's own dogfooded config predates fixes already made to the
+templates it was originally scaffolded from, and nothing re-checked it.
+`doctor` correctly flagged the format issue, but its message ("uses the
+legacy flat-string format") undersold the severity — it read as a style
+nit, not "this rule currently detects nothing."
+**Avoid:** when `doctor`/`validate` flags something as a warning on this
+repo's own files, read the actual content before assuming it's minor —
+"legacy format" can mean "not migrated" or it can mean "never had the
+real rules at all." A `check:doctor` CI gate now fails the build if this
+recurs (see `.agent-room/decisions.md`, 2026-07-14).
+
 ### 2026-07-13 — this repo's own installed hook had silently drifted from its template, undetected
 
 **What happened:** while touching `templates/adapters/git-hooks/guardrails-check.js`

@@ -15,6 +15,6 @@ jobs:
         with:
           node-version: "20"
       - name: Validate create-agent-room agent-room structure
-        run: npx --yes create-agent-room@latest validate .
+        run: npx --yes create-agent-room@2.1.0 validate .
       - name: Lint session logs
-        run: npx --yes create-agent-room@latest lint-sessions .
+        run: npx --yes create-agent-room@2.1.0 lint-sessions .

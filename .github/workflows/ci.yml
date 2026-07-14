@@ -23,5 +23,6 @@ jobs:
           cache: "npm"
       - run: npm ci
       - run: npm run check:lockfile
+      - run: npm run check:doctor
       - run: npm run lint
       - run: npm run test
