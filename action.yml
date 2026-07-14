@@ -27,9 +27,9 @@ inputs:
     default: 'both'
   version:
     description: >-
-      create-agent-room version to run via npx, e.g. "2.0.1" or "latest".
-      Pinned by default so CI results stay reproducible across runs
-      instead of silently changing behavior when a new version ships —
+      create-agent-room version to install and run, e.g. "2.0.1" or
+      "latest". Pinned by default so CI results stay reproducible across
+      runs instead of silently changing behavior when a new version ships —
       see the version-pinning rationale in
       templates/adapters/ci/github-actions.yml.tmpl for why. Bumped in
       lockstep with package.json's version at release time (see
@@ -37,7 +37,7 @@ inputs:
     required: false
     default: '2.1.0'
   node-version:
-    description: 'Node.js version to set up before running npx.'
+    description: 'Node.js version to set up before installing create-agent-room.'
     required: false
     default: '20'
 
@@ -56,12 +56,22 @@ runs:
       with:
         node-version: ${{ inputs.node-version }}
 
+    # Installed explicitly (npm install -g) rather than run via
+    # `npx --yes pkg@version cmd` - npx's temporary-install/exec-resolution
+    # path was found to fail intermittently on GitHub-hosted runners
+    # ("sh: 1: create-agent-room: not found", even though the package
+    # installed correctly). A global install + direct invocation sidesteps
+    # that machinery entirely. See .agent-room/anti-patterns.md, 2026-07-14.
+    - name: Install create-agent-room
+      shell: bash
+      run: npm install -g "create-agent-room@${{ inputs.version }}"
+
     - name: Validate agent-room structure
       if: inputs.checks == 'both' || inputs.checks == 'validate'
       shell: bash
-      run: npx --yes "create-agent-room@${{ inputs.version }}" validate "${{ inputs.target-dir }}"
+      run: create-agent-room validate "${{ inputs.target-dir }}"
 
     - name: Lint session logs
       if: inputs.checks == 'both' || inputs.checks == 'lint-sessions'
       shell: bash
-      run: npx --yes "create-agent-room@${{ inputs.version }}" lint-sessions "${{ inputs.target-dir }}"
+      run: create-agent-room lint-sessions "${{ inputs.target-dir }}"

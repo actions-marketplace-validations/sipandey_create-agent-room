@@ -16,6 +16,37 @@ have to re-derive it from scratch by reading git history.
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-14 — replaced `npx --yes pkg@version cmd` with explicit install + invoke, everywhere it appeared
+
+**Decision:** in three places — this repo's own
+`.github/workflows/agent-room-validate.yml`, the scaffolded
+`templates/adapters/ci/github-actions.yml.tmpl`, and the published
+composite Action (`action.yml`) — replaced `run: npx --yes
+create-agent-room@<version> <cmd> <target>` with a separate `npm
+install -g create-agent-room@<version>` step followed by `run:
+create-agent-room <cmd> <target>`. Also updated the one-line CI example
+in `README.md`'s `lint-sessions` section for consistency, and a
+`test/init.test.js` assertion that checked for the old pattern.
+**Why:** `npx --yes pkg@version cmd` failed reproducibly (twice,
+identically) on real GitHub Actions runs immediately after re-pinning
+this repo's own CI to a specific version — confirmed not a registry/CDN
+propagation blip (recurred on a later push, after propagation would
+have caught up) and not a broken package (verified published correctly
+via `npm pack`/`npm view`, and a clean local repro with matching
+Node/npm versions worked). The exact internal npx failure mode wasn't
+fully root-caused, but explicit install-then-invoke doesn't depend on
+knowing it — it replaces one opaque, bundled mechanism with two
+ordinary, independently-diagnosable steps. Fixed in all three places at
+once since they shared the identical pattern and therefore the
+identical latent bug — every project scaffolded with `--tools git`, and
+every user of the published Action, had this same risk.
+**Rejected:** treating this repo's own CI failure as an isolated fix
+and leaving the scaffolded template / `action.yml` as-is — would have
+left the actual product-facing bug (affecting every scaffolded user's
+CI and every Marketplace Action consumer) unfixed, since the only
+reason it surfaced here first is that this repo's own CI happens to run
+on every push.
+
 ### 2026-07-14 — excluded the git-hook-missing finding from check:doctor's CI gate specifically, not from doctor itself
 
 **Decision:** `scripts/check-doctor-clean.js` now filters out the one

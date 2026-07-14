@@ -21,6 +21,39 @@ Append a new entry every time:
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-14 — `npx --yes pkg@version cmd` failed reproducibly on GitHub-hosted runners
+
+**What happened:** after re-pinning this repo's own CI workflow from
+`@latest` to `@2.1.0`, `agent-room-validate`'s `npx --yes
+create-agent-room@2.1.0 validate .` step failed twice, identically,
+~13 minutes apart: `sh: 1: create-agent-room: not found` (exit 127).
+Initially assumed transient (npm registry/CDN propagation right after
+publish) — a clean, isolated-cache local repro with matching Node
+20/npm 10.8.2 versions succeeded immediately, which supported that
+theory. It didn't hold: the exact same failure recurred on the next
+real CI push, ruling out a one-off blip. The package itself was
+confirmed correctly published throughout (`npm pack`, `npm view` both
+fine) — the failure is specifically in npx's temporary-install/
+exec-resolution path on GitHub's runner image, not the package.
+**Root cause:** never fully isolated npx's internal failure (its own
+verbose logging produced nothing extra to go on), but the fix doesn't
+require knowing why — `npx --yes pkg@version cmd` bundles install and
+exec into one opaque, npx-version-and-environment-dependent mechanism.
+Replacing it with `npm install -g pkg@version` (a separate, well-worn
+step) followed by direct invocation of the resulting binary sidesteps
+whatever that mechanism was doing wrong, and was verified working both
+locally and (after the fix) on real GitHub Actions runs.
+**Avoid:** don't rely on `npx --yes pkg@version cmd` for CI automation —
+prefer an explicit `npm install -g` (or local `npm install` +
+`./node_modules/.bin/<cmd>`) followed by a separate invocation step, so
+an install failure and an exec failure show up as distinct, diagnosable
+steps instead of one opaque command. This applied to three separate
+places that all had the same pattern: this repo's own
+`.github/workflows/agent-room-validate.yml`, the scaffolded template
+(`templates/adapters/ci/github-actions.yml.tmpl`), and the published
+composite Action (`action.yml`) — all fixed together since they shared
+the exact same bug.
+
 ### 2026-07-14 — the check:doctor CI gate broke CI on its very first real run
 
 **What happened:** merged a `check:doctor` CI gate (see the prior entry

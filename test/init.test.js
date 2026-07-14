@@ -109,9 +109,15 @@ test('runInit: scaffolds git pre-commit hook when requested', async (t) => {
   assert.ok(fs.existsSync(ciWorkflowPath), 'CI workflow should exist');
 
   const ciWorkflowContent = fs.readFileSync(ciWorkflowPath, 'utf8');
-  assert.match(ciWorkflowContent, new RegExp(`create-agent-room@${CAR_VERSION} validate`));
-  assert.match(ciWorkflowContent, new RegExp(`create-agent-room@${CAR_VERSION} lint-sessions`));
+  // Installed explicitly (npm install -g), not via `npx --yes pkg@version
+  // cmd` - npx's temporary-install/exec-resolution path was found to fail
+  // intermittently on GitHub-hosted runners. See .agent-room/anti-patterns.md,
+  // 2026-07-14.
+  assert.match(ciWorkflowContent, new RegExp(`npm install -g create-agent-room@${CAR_VERSION}`));
+  assert.match(ciWorkflowContent, /run: create-agent-room validate \./);
+  assert.match(ciWorkflowContent, /run: create-agent-room lint-sessions \./);
   assert.doesNotMatch(ciWorkflowContent, /create-agent-room@latest/);
+  assert.doesNotMatch(ciWorkflowContent, /run:.*npx/);
 });
 
 test('runInit: creates a clean initial commit when --git is passed (regression: guardrails must not block the tool\'s own genesis commit)', async (t) => {

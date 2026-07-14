@@ -225,9 +225,15 @@ Validates all session logs in `.agent-room/sessions/` against the required schem
 **Usage in CI:**
 
 ```yaml
+- name: Install create-agent-room
+  run: npm install -g create-agent-room
 - name: Validate Session Logs
-  run: npx create-agent-room lint-sessions .
+  run: create-agent-room lint-sessions .
 ```
+
+(Prefer an explicit install over `npx create-agent-room ...` in CI — npx's
+temporary-install/exec-resolution path has been observed to fail
+intermittently on GitHub-hosted runners.)
 
 Already ran `init --tools git`? Use the workflow file it scaffolded
 instead of writing this by hand — see [GitHub Action](#github-action)

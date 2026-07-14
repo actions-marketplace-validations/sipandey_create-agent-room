@@ -10,6 +10,18 @@ Releases before 1.2.1 predate this changelog. See `git log` and the tags
 
 ## [Unreleased]
 
+### Fixed
+
+- The scaffolded CI workflow (`templates/adapters/ci/github-actions.yml.tmpl`)
+  and the published composite Action (`action.yml`) both ran
+  `create-agent-room` via `npx --yes pkg@version cmd`, which failed
+  reproducibly on GitHub-hosted runners (`sh: 1: create-agent-room: not
+  found`, exit 127, even though the package installed correctly) — not a
+  registry propagation blip, confirmed by it recurring on a later run.
+  Replaced with an explicit `npm install -g create-agent-room@<version>`
+  step followed by direct invocation, in both places plus this repo's
+  own workflow and a README CI example that had the same pattern.
+
 ### Added
 
 - `npm run check:doctor` (`scripts/check-doctor-clean.js`), wired into

@@ -14,7 +14,17 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: "20"
+      # npx's temporary-install/exec-resolution path failed reproducibly on
+      # GitHub-hosted runners (not a registry blip - confirmed by re-running
+      # after the CDN would have caught up, and by a clean local repro with
+      # matching Node/npm versions that worked fine): `npx --yes pkg@version
+      # cmd` intermittently produced "sh: 1: create-agent-room: not found"
+      # (exit 127) even though the package installed. Explicit global
+      # install + direct invocation sidesteps that machinery entirely. See
+      # .agent-room/anti-patterns.md, 2026-07-14.
+      - name: Install create-agent-room@2.1.0
+        run: npm install -g create-agent-room@2.1.0
       - name: Validate create-agent-room agent-room structure
-        run: npx --yes create-agent-room@2.1.0 validate .
+        run: create-agent-room validate .
       - name: Lint session logs
-        run: npx --yes create-agent-room@2.1.0 lint-sessions .
+        run: create-agent-room lint-sessions .
