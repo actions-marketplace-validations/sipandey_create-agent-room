@@ -12,8 +12,19 @@
 const path = require('path');
 const { getFindings } = require(path.join('..', 'lib', 'doctor'));
 
+// git hooks live in .git/hooks/, which is never part of the tracked file
+// tree - `git checkout`/`actions/checkout` never restores it, by design
+// (checking out a repo must not execute arbitrary hook code). That makes
+// "tools lists git, but .git/hooks/pre-commit doesn't exist" structurally
+// unactionable in ANY CI checkout, forever - it's correct, useful advice
+// for `doctor` on a human's local machine (see .agent-room/decisions.md,
+// 2026-07-14), but not something this CI gate can ever satisfy. Excluded
+// here only, not from doctor's own logic.
+const CI_UNCHECKABLE = /lists "git" as a tool, but \.git\/hooks\/pre-commit does not exist/;
+
 const target = path.join(__dirname, '..');
-const { critical, advisory } = getFindings(target);
+const { critical, advisory: rawAdvisory } = getFindings(target);
+const advisory = rawAdvisory.filter((a) => !CI_UNCHECKABLE.test(a));
 
 if (critical.length > 0 || advisory.length > 0) {
   console.error("This repo's own `create-agent-room doctor .` is not clean:");

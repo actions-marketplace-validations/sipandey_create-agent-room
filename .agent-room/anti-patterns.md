@@ -21,6 +21,38 @@ Append a new entry every time:
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-14 — the check:doctor CI gate broke CI on its very first real run
+
+**What happened:** merged a `check:doctor` CI gate (see the prior entry
+below) that fails the build on any `doctor` finding for this repo. Its
+very first CI run after merging to `main` failed immediately:
+`.agent-room.json lists "git" as a tool, but .git/hooks/pre-commit does
+not exist`. `.git/hooks/*` is never part of the tracked file tree — `git
+checkout`/`actions/checkout` never restores it, by design (checking out
+a repo must not execute arbitrary hook code) — so this specific finding
+can never be satisfied in *any* CI checkout, for this repo or any other
+project that lists `git` as a tool. The same push also produced a
+separate, unrelated `npx --yes create-agent-room@2.1.0 validate .`
+failure (`sh: 1: create-agent-room: not found`, exit 127) — investigated
+separately and concluded to be a transient npm registry/CDN propagation
+gap immediately after publish, not a code bug (a clean isolated-cache
+local repro with matching Node/npm versions succeeded).
+**Root cause:** I manually verified `check:doctor` passed/failed
+correctly by toggling drift *locally*, but never checked it against a
+git-hooks-genuinely-absent state — the exact condition every CI checkout
+starts from. Locally, `.git/hooks/pre-commit` always exists (installed by
+`init --git` at some point), so the false positive was invisible until
+the very first real CI run exercised it.
+**Avoid:** when adding a CI gate that runs local-machine-oriented checks
+(anything doctor also uses to advise a human on their own clone), verify
+it against a state that matches a *fresh checkout* specifically — not
+just a locally-modified copy — since some conditions (git hooks, in this
+case) are categorically different between "my machine" and "CI runner."
+Fixed by excluding this one specific message from
+`scripts/check-doctor-clean.js` only (not from `doctor`'s own logic,
+which is correct, useful advice for a human) — see
+`.agent-room/decisions.md`, 2026-07-14.
+
 ### 2026-07-14 — this repo's own guardrails.json had zero functional secret-detection rules
 
 **What happened:** while designing a fix for `doctor`'s "legacy

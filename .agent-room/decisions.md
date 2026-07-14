@@ -16,6 +16,30 @@ have to re-derive it from scratch by reading git history.
 
 <!-- Entries go below this line, newest first. -->
 
+### 2026-07-14 — excluded the git-hook-missing finding from check:doctor's CI gate specifically, not from doctor itself
+
+**Decision:** `scripts/check-doctor-clean.js` now filters out the one
+`getFindings()` advisory message matching `lists "git" as a tool, but
+.git/hooks/pre-commit does not exist` before deciding whether to fail
+the build. `lib/doctor.js`'s own logic is unchanged — `doctor` still
+reports this finding normally when run by a human on their own machine.
+**Why:** git hooks live in `.git/hooks/`, which is never part of the
+tracked file tree — no `git checkout` (including `actions/checkout`)
+ever restores it, by design, since checking out a repo must never
+implicitly execute hook code. That makes this one specific finding
+structurally unsatisfiable in *any* CI checkout, for this repo or any
+project shaped like it — CI enforces guardrails via `validate`, not the
+git hook, which is explicitly a local-machine safeguard (a pre-commit
+hook can't meaningfully run in CI anyway, since CI triggers on
+push/PR events, not on the act of committing). Discovered when
+`check:doctor`'s very first real CI run failed on exactly this — see
+`.agent-room/anti-patterns.md`, 2026-07-14.
+**Rejected:** changing `checkConfigRealityMismatch()` in `lib/doctor.js`
+itself to stop reporting this — would remove genuinely useful advice for
+a human who scaffolded with `--tools git` but never actually got the
+hook installed locally (e.g. `init` failed partway, or they cloned
+someone else's already-scaffolded repo without re-running `init --git`).
+
 ### 2026-07-14 — added a project-specific `check:doctor` CI gate instead of changing doctor's own exit-code contract
 
 **Decision:** three `doctor` findings on this repo (hook drift, legacy
